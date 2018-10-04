@@ -169,7 +169,7 @@ class ClientThread(threading.Thread):
         #TODO:Cleanup this part
         if count == CONN_COUNT:
             print("Inputs to circuit: {}".format(TAGS))
-            print(mycirc.fire(inputs))
+            print(mycirc.fire(TAGS))
 
         print("Server at {} disconnected".format(clientaddr))
         print("-------------------------------------")
