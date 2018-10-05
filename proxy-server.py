@@ -167,6 +167,8 @@ class ClientThread(threading.Thread):
         print("-------------------------------------")
         
         #TODO:Cleanup this part
+
+        # ------ EVALUATION ------
         if count == CONN_COUNT:
             print("Inputs to circuit: {}".format(TAGS))
             print(mycirc.fire(TAGS))
