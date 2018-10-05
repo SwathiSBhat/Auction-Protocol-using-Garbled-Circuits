@@ -207,7 +207,24 @@ class Circuit(object):
 
         with open('garbled_circuit.json','w') as f:
             json.dump(j,f)
-        # return j
+        
+
+    def prep_for_json_cut_n_choose(self):
+        j = {"num_inputs": self.num_inputs,
+                "on_input_gates": {},
+                "gates": {},
+                "output_gate_ids": self.output_gate_ids}
+        for g_id, gate in self.gates.items():
+            gate_json = {"table": gate.table, "inputs": gate.inputs}
+            if type(gate) is OnInputGate:
+                j["on_input_gates"][gate.g_id] = gate_json
+            else:
+                j["gates"][gate.g_id] = gate_json
+
+        with open('cut-and-choose.json','a') as f:
+            json.dump(j,f)
+            f.write("\n")
+    
 
 if __name__ == "__main__":
     on_input_gates = [[0, "AND", [0, 1]],[1, "XOR", [2, 3]],[2, "OR", [0,3]]]

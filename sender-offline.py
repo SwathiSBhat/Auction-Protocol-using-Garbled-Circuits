@@ -10,6 +10,7 @@ import json
 import util
 import cuberoot 
 import garbler  
+import os 
 
 #variables
 MAX_DATA_RECV = 999999
@@ -20,6 +21,7 @@ n = 5
 # for all N circuits generated
 KEYS = []
 COMM = []
+
 
 class ProxyThread(threading.Thread):
 
@@ -57,38 +59,51 @@ class ProxyThread(threading.Thread):
         # ---------- END ---------
 
         # ---------- TO BE DONE FOR EVERY CIRCUIT ----------
-        
-        # TODO: Change range to number of circuits (N) to be created
-        for i in range(0,4):
-            tags = []
-            try:
-                t0 = mycirc.poss_inputs[i][0]
-                t1 = mycirc.poss_inputs[i][1]
-                print("Tag0: {} Tag1: {}".format(t0,t1))
-                tags.append(t0)
-                tags.append(t1)
-            except:
-                raise ValueError("Something went wrong with tag generation!")
+       
+        global CIRCUITS
 
-            print("---------------------------------")
+        for i in range(0,n):
+            # k and c store commitments and keys for 1 circuit
+            k = []
+            c = []
+            for j in range(0,mycirc.num_inputs):
+                tags = []
+                try:
+                    # TODO: Take tags from json file
+                    t0 = CIRCUITS[i].poss_inputs[j][0]
+                    t1 = CIRCUITS[i].poss_inputs[j][1]
+                    print("Tag0: {} Tag1: {}".format(t0,t1))
+                    tags.append(t0)
+                    tags.append(t1)
+                except:
+                    raise ValueError("Something went wrong with tag generation!")
+
+                print("---------------------------------")
         
-            k0 = random.SystemRandom().randint(1,N-1)
-            k1 = random.SystemRandom().randint(1,N-1)
-            # DEBUG
-            # print("k0: {} k1: {}".format(k[0],k[1]))
+                k0 = random.SystemRandom().randint(1,N-1)
+                k1 = random.SystemRandom().randint(1,N-1)
+                # DEBUG
+                # print("k0: {} k1: {}".format(k[0],k[1]))
         
-            C0 = Double_Commitment(k0,tags[0],N).commitment
-            C1 = Double_Commitment(k1,tags[1],N).commitment
+                C0 = Double_Commitment(k0,tags[0],N).commitment
+                C1 = Double_Commitment(k1,tags[1],N).commitment
+
+                # running loop for every input in each circuit
+                # TODO: Check if all commitments are to be sent 
+                # or just the ones for given inputs
+                if inputs[j] == 0:
+                    c.append(C0)
+                    k.append(k0)
+                    # print("Input: {} Comm: {} Key: {} Comm[0]: {} ".format(inputs[j],C0,k0,C0[0]))
+                else:
+                    c.append(C1)
+                    k.append(k1)
+                    # print("Input: {} Comm: {} Key: {} Comm[0]: {} ".format(inputs[j],C1,k1,C1[0]))
+                print("-----------------------------------")
+
             global KEYS,COMM
-            if inputs[i] == 0:
-                COMM.append(C0)
-                KEYS.append(k0)
-                print("Input: {} Comm: {} Key: {} Comm[0]: {} ".format(inputs[i],C0,k0,C0[0]))
-            else:
-                COMM.append(C1)
-                KEYS.append(k1)
-                print("Input: {} Comm: {} Key: {} Comm[0]: {} ".format(inputs[i],C1,k1,C1[0]))
-
+            COMM.append(c)
+            KEYS.append(k)
 
 
         # ----------- END ----------
@@ -100,7 +115,7 @@ class ProxyThread(threading.Thread):
         self.proxy_socket.send(data.encode())
 
         # DEBUG
-        print("COMM: ",COMM)
+        # print("COMM: ",COMM)
         print("KEYS: ",KEYS)
 
         # receive indices of selected circuits
@@ -139,11 +154,21 @@ if __name__ == "__main__":
 
     output_gates = [[5, "OR", [3, 4]]]
 
-    with open("cut-and-choose.json","a") as f:
-        for i in range(0,n):
-            mycirc = garbler.Circuit(4, on_input_gates, mid_gates, output_gates)
-            print("Circuit number: {} Possible inputs: {}".format(i+1,mycirc.poss_inputs))
-            
+    # remove old cut-and-choose.json, comm.json, keys.json
+    if os.path.isfile("cut-and-choose.json"):
+        os.remove("cut-and-choose.json")
+    # os.remove("comm.json")
+    
+    # list containing all circuit objects
+    CIRCUITS = []
+
+    for i in range(0,n):
+        mycirc = garbler.Circuit(4, on_input_gates, mid_gates, output_gates)
+        # print("Circuit number: {} Possible inputs: {}".format(i+1,mycirc.poss_inputs))
+        mycirc.prep_for_json_cut_n_choose()
+        CIRCUITS.append(mycirc)
+
+    print("Circuit objects: ",CIRCUITS)
 
     sender_server.listen(1)
     proxysock, proxyaddr = sender_server.accept()

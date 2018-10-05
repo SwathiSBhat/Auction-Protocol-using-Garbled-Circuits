@@ -49,11 +49,14 @@ class ClientThread(threading.Thread):
         data = s.recv(MAX_DATA_RECV)
         data = json.loads(data.decode())
         COMM = data.get("COMM")
-        print("Commitments received: ",COMM)
+        # print("Commitments received: ",COMM)
 
         # TODO: change sampling range to number of circuits
+        # TODO: Send number of circuits = n from sender to proxy
         num_of_indices = 2
-        indices = random.SystemRandom().sample(range(0,4), num_of_indices)
+        # indices = indices of chosen circuits to open
+        indices = random.SystemRandom().sample(range(0,5), num_of_indices)
+        indices.sort()
         print("Sampled indices: ",indices)
 
         data = json.dumps({"indices":indices})
@@ -65,17 +68,47 @@ class ClientThread(threading.Thread):
         print("selected keys received from sender: ",keys_selected)
 
         # opening and verifying commitments
-        for i in range(0,len(indices)):
-            k_cube = pow(keys_selected[i],3,N)
-            k_cube_hash = hashlib.sha256(format(k_cube,'b')).hexdigest()
-           
-            print("Comm: {} , Key: {}, hash: {}".format(COMM[indices[i]],keys_selected[i],k_cube_hash))
+        # i = index of selected circuits
+        # j = iterates through number of inputs in every circuit
+        # count = to maintain count of selected garbled circuit to verify
+        count = 0
+        with open("cut-and-choose.json") as f:
+            for i in range(0,len(indices)):
+                TAGS = []
+                for j in range(0,len(inputs)):
+                    k_cube = pow(keys_selected[i][j],3,N)
+                    k_cube_hash = hashlib.sha256(format(k_cube,'b')).hexdigest()
+                    k_hash = hashlib.sha256(format(keys_selected[i][j], 'b')).hexdigest()
 
-            if k_cube_hash == COMM[indices[i]][0]:
-                print("Commitment opened successfully!")
+                    # print("Comm: {} , Key: {}, hash: {}".format(COMM[indices[i]],keys_selected[i],k_cube_hash))
 
+                    if k_cube_hash == COMM[indices[i]][j][0]:
+                        print("Commitment opened successfully!")
+                    
+                    # getting tags from commitments
+                    tag_int = int(k_hash, 16)^COMM[indices[i]][j][1]
+                    print("Comm: {} Tag_Int: {}".format(COMM[indices[i]][j][0],tag_int))
+                    tag = gc_util.decode_str(tag_int)
+                    TAGS.append(tag)
+                
+                print("count: {} indices[{}]={}".format(count,i,indices[i]))
+                # load only circuits whose indices have been selected
+                # TODO: POSSIBLE BUG here
+                if count != indices[i]:
+                        while count != indices[i]:
+                            count += 1
+                            line = f.readline()
+                
+                line = f.readline()
+                data = json.loads(line)
+                count += 1
+                print("---------------------------------------")
+                print("Input to circuit {} = {}".format(i,TAGS))
+                mycirc = evaluator.Circuit(data)
+                print(mycirc.fire(TAGS))
+                print("---------------------------------------")
 
-
+# TODO : Change this to load from cut-and-choose.json
 with open('garbled_circuit.json') as data_file:
     data = json.load(data_file)
 

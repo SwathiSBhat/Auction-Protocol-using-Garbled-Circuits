@@ -24,6 +24,11 @@ class Double_Commitment():
         m = pow(self.witness_k,3,self.modulus)
         Y1 = hashlib.sha256(format(m,'b')).hexdigest()
         
+        # DEBUG
+        print("-------------------")
+        print("Comm: {}, Tag_int: {}".format(Y1,tag_int))
+        print("-------------------")
+
         witness_k_hash = hashlib.sha256(format(self.witness_k,'b')).hexdigest()
         # DEBUG:
         # print("k: {} ------- hash_k : {}".format(witness_k,witness_k_hash))
