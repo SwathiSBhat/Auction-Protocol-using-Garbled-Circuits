@@ -11,6 +11,7 @@ import util
 import cuberoot 
 import garbler  
 import os 
+import pickle
 
 #variables
 MAX_DATA_RECV = 999999
@@ -22,6 +23,9 @@ n = 5
 KEYS = []
 COMM = []
 
+# DEBUG
+K_all = []
+Comm_All = []
 
 class ProxyThread(threading.Thread):
 
@@ -64,8 +68,13 @@ class ProxyThread(threading.Thread):
 
         for i in range(0,n):
             # k and c store commitments and keys for 1 circuit
+            # TODO: Check if storing all commitments is required
             k = []
             c = []
+
+            # DEBUG
+            K = []
+            Comm = []
             for j in range(0,mycirc.num_inputs):
                 tags = []
                 try:
@@ -79,14 +88,22 @@ class ProxyThread(threading.Thread):
                     raise ValueError("Something went wrong with tag generation!")
 
                 print("---------------------------------")
-        
+                
                 k0 = random.SystemRandom().randint(1,N-1)
                 k1 = random.SystemRandom().randint(1,N-1)
                 # DEBUG
                 # print("k0: {} k1: {}".format(k[0],k[1]))
-        
+                
+                # TODO: TAKE 'a' into consideration while forming comm
+                # TODO: Send A=[a,a,a] to test-sender
+
                 C0 = Double_Commitment(k0,tags[0],N).commitment
                 C1 = Double_Commitment(k1,tags[1],N).commitment
+                
+                # TODO : K and Comm_All can be removed if KEYS
+                # and COMM stores all
+                K.append([k0,k1])
+                Comm.append([C0,C1])
 
                 # running loop for every input in each circuit
                 # TODO: Check if all commitments are to be sent 
@@ -100,11 +117,29 @@ class ProxyThread(threading.Thread):
                     k.append(k1)
                     # print("Input: {} Comm: {} Key: {} Comm[0]: {} ".format(inputs[j],C1,k1,C1[0]))
                 print("-----------------------------------")
-
+            
             global KEYS,COMM
             COMM.append(c)
             KEYS.append(k)
 
+            # DEBUG
+            global K_all,Comm_All
+            K_all.append(K)
+            Comm_All.append(Comm)
+       
+        print("----------------------------")
+        print("Keys all: ",K_all)
+        print("Selected keys: [{},{}] [{},{}], [{},{}]".format(K_all[1][0][0],K_all[1][0][1],K_all[3][0][0],K_all[3][0][1],K_all[4][0][0],K_all[4][0][1]))
+        print("----------------------------")
+        print("Selected comm: [{},{}],\n [{},{}], \n [{},{}]\n".format(Comm_All[1][0][0],Comm_All[1][0][1],Comm_All[3][0][0],Comm_All[3][0][1],Comm_All[4][0][0],Comm_All[4][0][1]))
+
+
+        #DEBUG
+        with open("key.data","wb") as f:
+            pickle.dump(K_all, f)
+
+        with open("comm.data", "wb") as f:
+            pickle.dump(Comm_All, f)
 
         # ----------- END ----------
 
@@ -155,6 +190,7 @@ if __name__ == "__main__":
     output_gates = [[5, "OR", [3, 4]]]
 
     # remove old cut-and-choose.json, comm.json, keys.json
+    # TODO: Add this check inside prep_for_json()
     if os.path.isfile("cut-and-choose.json"):
         os.remove("cut-and-choose.json")
     # os.remove("comm.json")
@@ -165,11 +201,14 @@ if __name__ == "__main__":
     for i in range(0,n):
         mycirc = garbler.Circuit(4, on_input_gates, mid_gates, output_gates)
         # print("Circuit number: {} Possible inputs: {}".format(i+1,mycirc.poss_inputs))
-        mycirc.prep_for_json_cut_n_choose()
+        filename = "cut-and-choose.json"
+        mycirc.prep_for_json_cut_n_choose(filename) 
         CIRCUITS.append(mycirc)
 
-    print("Circuit objects: ",CIRCUITS)
-
+    # print("Circuit objects: ",CIRCUITS)
+    with open("circuit.data","wb") as f:
+        pickle.dump(CIRCUITS, f)
+    
     sender_server.listen(1)
     proxysock, proxyaddr = sender_server.accept()
     newthread = ProxyThread(proxyaddr,proxysock)

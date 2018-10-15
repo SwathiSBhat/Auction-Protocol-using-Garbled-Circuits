@@ -10,6 +10,7 @@ import json
 import util
 import cuberoot 
 import garbler  
+import os 
 
 #variables
 MAX_DATA_RECV = 999999
@@ -153,7 +154,7 @@ class ProxyThread(threading.Thread):
 
 # *----- SENDER ------*
 
-CONN_COUNT = int(raw_input("Enter of number of bidders: "))
+CONN_COUNT = int(raw_input("Enter number of bidders: "))
 
 # TODO: Make entering of circuit from file or dynamic
 on_input_gates = [[0, "AND", [0, 1]], 
@@ -164,10 +165,11 @@ mid_gates = [[3, "XOR", [0, 1]],
              [4, "OR", [1, 2]]]
 
 output_gates = [[5, "OR", [3, 4]]]
-mycirc = garbler.Circuit(4, on_input_gates, mid_gates, output_gates)
-print("Possible input tags: ",mycirc.poss_inputs)
-print("----------------------------------------")
 
+mycirc = garbler.Circuit(4, on_input_gates, mid_gates, output_gates)
+# print("Possible input tags: ",mycirc.poss_inputs)
+# print("----------------------------------------")
+ 
 # TODO :Make this quit program
 if mycirc.num_inputs != CONN_COUNT:
     raise ValueError("Number of inputs to circuit and bidders don't match!")

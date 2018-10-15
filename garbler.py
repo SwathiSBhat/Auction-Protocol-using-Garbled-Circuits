@@ -209,7 +209,7 @@ class Circuit(object):
             json.dump(j,f)
         
 
-    def prep_for_json_cut_n_choose(self):
+    def prep_for_json_cut_n_choose(self, filename):
         j = {"num_inputs": self.num_inputs,
                 "on_input_gates": {},
                 "gates": {},
@@ -221,7 +221,7 @@ class Circuit(object):
             else:
                 j["gates"][gate.g_id] = gate_json
 
-        with open('cut-and-choose.json','a') as f:
+        with open(filename,'a') as f:
             json.dump(j,f)
             f.write("\n")
     

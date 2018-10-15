@@ -172,6 +172,7 @@ class ClientThread(threading.Thread):
         if count == CONN_COUNT:
             print("Inputs to circuit: {}".format(TAGS))
             print(mycirc.fire(TAGS))
+            server.close()
 
         print("Server at {} disconnected".format(clientaddr))
         print("-------------------------------------")
@@ -185,7 +186,7 @@ class ClientThread(threading.Thread):
 
 with open('garbled_circuit.json') as data_file:
     data = json.load(data_file)
-
+    
 mycirc = evaluator.Circuit(data)
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

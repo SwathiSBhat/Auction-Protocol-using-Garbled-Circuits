@@ -2,4 +2,7 @@ __pycache__
 *.pyc
 .DS_Store
 *.json
+*.py.swp
+cut-and-choose.json
+garbled_circuit.json
 
