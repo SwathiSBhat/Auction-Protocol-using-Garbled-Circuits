@@ -59,6 +59,10 @@ class ProxyThread(threading.Thread):
         data = json.dumps({"pub_key":pub_key, "C":C})
         self.proxy_socket.send(data.encode())
         print("Sent public key {} , C {} to proxy".format(pub_key,C))
+        key_gen = {"pub_key":pub_key, "priv_key":priv_key}
+        with open("init.data","wb") as f:
+            pickle.dump(key_gen, f)
+
         
         # ---------- END ---------
 

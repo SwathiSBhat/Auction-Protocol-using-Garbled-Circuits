@@ -34,7 +34,9 @@ class ProxyThread(threading.Thread):
 
         # creation of RSA modulus n by Sender i.e n=p*q
         # TODO: Share same pub_key as sender-offline !!!!!!!!!!!!!!!
-        pub_key,priv_key = (2155301, 6691879),(2861, 2339)
+        with open('init.data','rb') as f:
+            key_gen = pickle.load(f)
+        pub_key,priv_key = key_gen["pub_key"],key_gen["priv_key"]
         N = pub_key[1]
         p,q = priv_key[0],priv_key[1]
         
