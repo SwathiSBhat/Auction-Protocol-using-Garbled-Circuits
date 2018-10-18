@@ -33,13 +33,15 @@ class ProxyThread(threading.Thread):
         # ------------ TO BE DONE ONCE --------------
 
         # creation of RSA modulus n by Sender i.e n=p*q
-        # TODO: Share same pub_key as sender-offline !!!!!!!!!!!!!!!
-        with open('init.data','rb') as f:
-            key_gen = pickle.load(f)
-        pub_key,priv_key = key_gen["pub_key"],key_gen["priv_key"]
+        # TODO: make sure getting privkey is hard for others 
+        with open('init.json') as f:
+            data = json.load(f)
+        pub_key,priv_key = data.get("pub_key"),data.get("priv_key")
         N = pub_key[1]
         p,q = priv_key[0],priv_key[1]
+        A, indices = data.get("A"), data.get("indices")
         
+
         # 0. Send number of bidders to proxy 
         # Proxy sends connection number to sender so that
         # sender can initialize corresponding tags
@@ -57,13 +59,11 @@ class ProxyThread(threading.Thread):
 
         # -------------- END ---------------------------
 
-        indices = []
         CIRCUITS = []
         TAGS = []
         C_RAND = []
         KEYS = []
         COMM = []
-        A = []
         k = []
         comm = []
         u_all = []
@@ -75,9 +75,13 @@ class ProxyThread(threading.Thread):
         Z = []
         c_list = []
         u_allstr = []
-        # TODO: Get indices from offline step
-        indices = [1,3,4]
         
+        # TODO: Check if indices range starts from 0 or 1
+        full_list = [x for x in range(0,n)]
+        indices = set(indices)
+        indices_eval = list(indices^set(full_list))
+        # print("indices recv: {} indices to eval: {}".format(indices,indices_eval))
+
         # CIRCUITS contains the circuits generated in offline step
         with open("circuit.data","rb") as f:
             CIRCUITS = pickle.load(f)
@@ -92,7 +96,7 @@ class ProxyThread(threading.Thread):
         # 1. Sender chooses tags t0,t1 and an integer C  
         # create tags, comm, keys for 1 bidder at a time
         # => 2 tags, 2 commitments, 2 keys
-        for i in indices:
+        for i in indices_eval:
             print("CONN_COUNT: ",count)
             try:
                 t0 = CIRCUITS[i].poss_inputs[count-1][0]
@@ -119,15 +123,9 @@ class ProxyThread(threading.Thread):
             # Also computes u = E[a] and CO = Hash(u)
             # Transmit (C0,C1), CO to proxy
 
-            # TODO: Check if different a is reqr for every circuit
-            a = random.SystemRandom().getrandbits(1)
-            # TODO: Get a from sender-offline
-            a = 0
-            # print("a: ",a)
-            A.append(a)
+            a = A[i][count-1]
+            print("a: ",a)
 
-            # generating witnesses k0 and k1 for computing commitments
-            
             """
             k = []
             k.append(random.SystemRandom().randint(1,N-1))
@@ -177,9 +175,9 @@ class ProxyThread(threading.Thread):
         print("---------------------------------")
         print("All u for 3 circuits: ",u_all)
         
-        data = json.dumps({"pub_key":pub_key, "C":C_RAND, "CO":commCO, "comm":comm, "u":u_allstr})
+        data = json.dumps({"pub_key":pub_key, "C":C_RAND, "CO":commCO, "comm":comm, "u":u_allstr,"indices":indices_eval})
         print("-------------------------------------")
-        print("Sent pub_key: {},  u: {}, CO:{} to proxy".format(pub_key,u_allstr,commCO))
+        print("Sent pub_key: {},  u: {}, CO:{}, indices:{} to proxy".format(pub_key,u_allstr,commCO,indices_eval))
         print("-------------------------------------")
         self.proxy_socket.send(data.encode())
 
@@ -200,7 +198,7 @@ class ProxyThread(threading.Thread):
         bs = int(GM.GM_decrypt(v_list,priv_key))
         print("Decrypted bs: ",bs," type(bs): ",type(bs))
 
-        for i in range(0,len(indices)):
+        for i in range(0,len(indices_eval)):
             # TODO : check if this is required x0%N
             X0[i] = X0[i] % N
             X1.append((X0[i]*C_RAND[i])%N)
@@ -235,7 +233,7 @@ class ProxyThread(threading.Thread):
         print("-------------------------------------")
        
 
-# *----- SENDER ------*
+# *----- SENDER -----*
 
 CONN_COUNT = int(raw_input("Enter number of bidders: "))
 

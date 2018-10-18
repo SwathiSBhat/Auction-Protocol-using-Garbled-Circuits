@@ -6,4 +6,5 @@ __pycache__
 *.data
 cut-and-choose.json
 garbled_circuit.json
-
+key.data
+comm.data
