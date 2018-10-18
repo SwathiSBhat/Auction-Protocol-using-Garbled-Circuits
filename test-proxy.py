@@ -33,8 +33,6 @@ CONN_COUNT = 0
 # TODO: Take number of bidders as input here and refuse connections if 
 # bidders exceed connection count
 
-indices = [1,3,4]
-
 # config of sender-server
 SERVER = '127.0.0.1'
 # PORT = int(raw_input("Enter sender-server port number: "))
@@ -84,8 +82,9 @@ class ClientThread(threading.Thread):
         data = json.loads(data.decode())
         pub_key,C = data.get("pub_key"),data.get("C")
         comm,CO = data.get("comm"),data.get("CO")
+        indices_eval = data.get("indices")
         N = pub_key[1]
-        print("Received pub_key: {}, C: {},  CO:{} from sender".format(pub_key,C,CO))
+        print("Received pub_key: {}, C: {},  CO:{} indices:{} from sender".format(pub_key,C,CO,indices_eval))
         print("-------------------------------------")
 
         # 3. Chooser receives pub_key,C from proxy
@@ -115,7 +114,7 @@ class ClientThread(threading.Thread):
 
         # 7. Proxy computes z0^3 and z1^3 and checks H(z0^3/x0) and
         # H(z1^3/x1) are equal to 1st element of C0, C1
-        for i in range(0,len(indices)):
+        for i in range(0,len(indices_eval)):
             x1 = (C[i]*X0[i])%N
             z_a = util.modular_div_util(pow(Z[i][0],3),X0[i],N)
             z_b = util.modular_div_util(pow(Z[i][1],3),x1,N)
@@ -194,12 +193,12 @@ class ClientThread(threading.Thread):
             # cktcount = to keep circuit count to evaluate
             cktcount = 0
             with open("cut-and-choose.json") as f:
-                for i in range(0,len(indices)):
-                    if cktcount != indices[i]:
-                        while cktcount != indices[i]:
+                for i in range(0,len(indices_eval)):
+                    if cktcount != indices_eval[i]:
+                        while cktcount != indices_eval[i]:
                             cktcount += 1
                             line = f.readline()
-                    print("cktcount {} cktnumber: {}".format(cktcount,indices[i]))
+                    print("cktcount {} cktnumber: {}".format(cktcount,indices_eval[i]))
                     line = f.readline()
                     data = json.loads(line)
                     cktcount += 1
