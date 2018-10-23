@@ -4,8 +4,8 @@ from __future__ import print_function
 # import secrets
 from random import SystemRandom
 import hashlib 
+from util import *
 import gc_util 
-
 
 class Double_Commitment():
     

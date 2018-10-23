@@ -3,10 +3,8 @@ from __future__ import print_function
 import socket
 import json
 import threading
-import GM
-import util 
 import random
-import gc_util
+from util import *
 
 # variables
 MAX_DATA_RECV = 999999

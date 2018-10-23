@@ -7,8 +7,7 @@ import json
 import thread
 import threading 
 import hashlib
-import util 
-import gc_util 
+from util import *
 import evaluator
 import random
 import pickle 
@@ -105,7 +104,7 @@ class ClientThread(threading.Thread):
         # j = iterates through number of inputs in every circuit
         # count = to maintain count of selected garbled circuit to verify
         count = 0
-        with open("cut-and-choose.json") as f:
+        with open("test/cut-and-choose.json") as f:
             for i in range(0,len(indices)):
                 TAGS = []
                 for j in range(0,len(inputs)):

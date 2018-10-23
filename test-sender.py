@@ -2,17 +2,14 @@ from __future__ import print_function
 
 import socket
 import threading
-import GM  
-from commitment import Double_Commitment 
+from util.commitment import Double_Commitment 
 import random 
 import hashlib 
 import json 
-import util
-import cuberoot 
+from util import *
 import garbler  
 import os 
 import pickle
-import gc_util 
 
 #variables
 MAX_DATA_RECV = 999999

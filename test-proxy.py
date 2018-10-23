@@ -7,8 +7,7 @@ import json
 import thread
 import threading 
 import hashlib
-import util 
-import gc_util 
+from util import *
 import evaluator
 
 # variables
@@ -121,6 +120,13 @@ class ClientThread(threading.Thread):
             hash_z0 = hashlib.sha256(format(z_a,'b')).hexdigest()
             hash_z1 = hashlib.sha256(format(z_b,'b')).hexdigest()
             # print("H(z0^3/x0):  ",hash_z0,"\n H(z1^3/x1):  ",hash_z1)
+            
+            print("-------------------------------------")
+            if ( hash_z0 == C0[0] or hash_z0 == C1[0] ) and ( hash_z1 == C0[0] ) or ( hash_z1 == C1[0] ):
+                print("Verified sender tags")
+            else:
+                print("The sender isn't sending the right tags")
+            print("-------------------------------------")
 
             # FINAL : Verify c published by sender
             # TODO: Verify c publshed by sender
@@ -192,7 +198,7 @@ class ClientThread(threading.Thread):
         if count == CONN_COUNT:
             # cktcount = to keep circuit count to evaluate
             cktcount = 0
-            with open("cut-and-choose.json") as f:
+            with open("test/cut-and-choose.json") as f:
                 for i in range(0,len(indices_eval)):
                     if cktcount != indices_eval[i]:
                         while cktcount != indices_eval[i]:

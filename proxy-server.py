@@ -2,13 +2,11 @@ from __future__ import print_function
 
 import socket
 import os
-import sys
 import json 
 import thread
 import threading 
 import hashlib
-import util 
-import gc_util 
+from util import *
 import evaluator
 
 # variables
@@ -22,11 +20,6 @@ TAGS = []
 # of connections whenever new bidder joins
 lock = threading.Lock()
 CONN_COUNT = 0
-
-# print("CONN_COUNT: ",CONN_COUNT)
-# TODO: Take number of bidders as input here and refuse connections if 
-# bidders exceed connection count
-
 
 # config of sender-server
 SERVER = '127.0.0.1'
@@ -46,10 +39,12 @@ class ClientThread(threading.Thread):
 
         print("Connection number: ",CONN_COUNT,"  made at: ",clientaddr)
         print("-------------------------------------")
+        
 
     def run(self):
         # create a socket to connect to sender/server from proxy
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # TODO - Catch conn reset error
         s.connect((SERVER,PORT))
         # 0. Receive number of bidders in the system
         # Send conn_count to sender so that sender can initialize tags
@@ -111,6 +106,15 @@ class ClientThread(threading.Thread):
         hash_z0 = hashlib.sha256(format(z_a,'b')).hexdigest()
         hash_z1 = hashlib.sha256(format(z_b,'b')).hexdigest()
         # print("H(z0^3/x0):  ",hash_z0,"\n H(z1^3/x1):  ",hash_z1)
+        
+        # verifying that sender sent correct tags he had committed to - VERIFIABLE PROXY
+        
+        print("-------------------------------------")
+        if ( hash_z0 == C0[0] or hash_z0 == C1[0] ) and ( hash_z1 == C0[0] or hash_z1 == C1[0] ):
+            print("Verified sender tags")
+        else:
+            print("The sender isn't sending the right tags")
+        print("-------------------------------------")
 
         # FINAL : Verify c published by sender
         # TODO: Verify c publshed by sender
@@ -166,39 +170,40 @@ class ClientThread(threading.Thread):
         print("TAGS: ",TAGS)
         print("-------------------------------------")
         
-        #TODO:Cleanup this part
-
         # ------ EVALUATION ------
         if count == CONN_COUNT:
             print("Inputs to circuit: {}".format(TAGS))
             print(mycirc.fire(TAGS))
             server.close()
+            print("Shutting down...")
+            os._exit(0)
 
         print("Server at {} disconnected".format(clientaddr))
         print("-------------------------------------")
         s.close()
 
-        # TODO : If proxy quits, quit client and sender 
-        # TODO : Figure out where to close client socket
-
-
 # ------- EVALUATOR -------- 
-
-with open('garbled_circuit.json') as data_file:
-    data = json.load(data_file)
+if __name__ == "__main__":
     
-mycirc = evaluator.Circuit(data)
+    with open('test/garbled_circuit.json') as data_file:
+        data = json.load(data_file)
+    
+    mycirc = evaluator.Circuit(data)
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
 
-server.bind(('',0))
+    server.bind(('',0))
 
-print("Proxy server started at ", server.getsockname())
+    print("Proxy server started at ", server.getsockname())
 
-while True:
-    server.listen(BACKLOG)
-    clientsock, clientaddr = server.accept()
-    newthread = ClientThread(clientaddr, clientsock)
-    newthread.start()
+    while True:
+        try:
+            server.listen(BACKLOG)
+            clientsock, clientaddr = server.accept()
+            newthread = ClientThread(clientaddr, clientsock)
+            newthread.start()
+        except KeyboardInterrupt:
+            print("Shutting down.....")
+            exit(0)
 

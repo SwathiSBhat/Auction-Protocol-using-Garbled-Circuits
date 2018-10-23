@@ -2,16 +2,14 @@ from __future__ import print_function
 
 import socket
 import threading
-import GM  
-from commitment import Double_Commitment 
+from util.commitment import Double_Commitment 
 import random 
 import hashlib 
 import json 
-import util
-import cuberoot 
 import garbler  
 import os 
 import pickle
+from util import *
 
 #variables
 MAX_DATA_RECV = 999999
@@ -196,8 +194,8 @@ if __name__ == "__main__":
     # remove old cut-and-choose.json, comm.json, keys.json
     # TODO: Add this check inside prep_for_json()
     # TODO: Check if write rewrites. If rewritten this line not needed
-    if os.path.isfile("cut-and-choose.json"):
-        os.remove("cut-and-choose.json")
+    if os.path.isfile("test/cut-and-choose.json"):
+        os.remove("test/cut-and-choose.json")
     # os.remove("comm.json")
     
     # list containing all circuit objects
