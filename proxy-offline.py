@@ -7,8 +7,7 @@ import json
 import thread
 import threading 
 import hashlib
-import util 
-import gc_util 
+from util import *
 import evaluator
 import random
 import pickle 
@@ -17,9 +16,6 @@ import pickle
 BACKLOG = 50
 MAX_DATA_RECV = 999999
 
-# config of sender-server
-SERVER = '127.0.0.1'
-PORT = int(raw_input("Enter sender-server port number: "))
 
 # TODO set n to practical value
 n = 5
@@ -32,8 +28,11 @@ class ClientThread(threading.Thread):
     def run(self):
         # create a socket to connect to sender/server from proxy
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((SERVER,PORT))
-
+        try:
+            s.connect((SERVER,PORT))
+        except socket.error as e:
+            print("An error occurred : ",e)
+            os._exit(0)
         # --------- TO BE DONE ONCE ---------
 
         # Receive CONN_COUNT from sender
@@ -105,7 +104,7 @@ class ClientThread(threading.Thread):
         # j = iterates through number of inputs in every circuit
         # count = to maintain count of selected garbled circuit to verify
         count = 0
-        with open("cut-and-choose.json") as f:
+        with open("test/cut-and-choose.json") as f:
             for i in range(0,len(indices)):
                 TAGS = []
                 for j in range(0,len(inputs)):
@@ -143,13 +142,22 @@ class ClientThread(threading.Thread):
                 print("---------------------------------------")
 
 if __name__ == "__main__":
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
 
-    server.bind(('',0))
+    try:
+        # config of sender-server
+        SERVER = '127.0.0.1'
+        PORT = int(raw_input("Enter sender-server port number: "))
 
-    print("Proxy server started at ", server.getsockname())
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
 
-    newthread = ClientThread()
-    newthread.start()
+        server.bind(('',0))
+
+        print("Proxy server started at ", server.getsockname())
+    
+        newthread = ClientThread()
+        newthread.start()
+    except KeyboardInterrupt:
+        print("Shutting down...")
+        exit(0)
 

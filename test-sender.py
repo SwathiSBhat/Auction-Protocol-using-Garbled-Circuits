@@ -2,17 +2,14 @@ from __future__ import print_function
 
 import socket
 import threading
-import GM  
-from commitment import Double_Commitment 
+from util.commitment import Double_Commitment 
 import random 
 import hashlib 
 import json 
-import util
-import cuberoot 
+from util import *
 import garbler  
 import os 
 import pickle
-import gc_util 
 
 #variables
 MAX_DATA_RECV = 999999
@@ -34,7 +31,7 @@ class ProxyThread(threading.Thread):
 
         # creation of RSA modulus n by Sender i.e n=p*q
         # TODO: make sure getting privkey is hard for others 
-        with open('init.json') as f:
+        with open('test/init.json') as f:
             data = json.load(f)
         pub_key,priv_key = data.get("pub_key"),data.get("priv_key")
         N = pub_key[1]
@@ -52,9 +49,11 @@ class ProxyThread(threading.Thread):
         # connection count received from proxy
         count = data.get("conn_count")
         print("Received conn_count {} from proxy".format(count)) 
+        """
         # TODO: Add method to end if count > CONN_COUNT
         if count > CONN_COUNT:
             print("Number of bidders can't be greater than number of inputs")
+        """
         print("---------------------------------")
 
         # -------------- END ---------------------------
@@ -181,7 +180,6 @@ class ProxyThread(threading.Thread):
         print("-------------------------------------")
         self.proxy_socket.send(data.encode())
 
-        # TODO: Send bs directly from chooser
         # 5. Sender receives x0 from proxy and computes x1=x0*C
         # y0 = x0^1/3 y1 = x1^1/3. Sender decrypts bs
         # if bs=0 transmit (z0,z1)=(y0k0,y1k1) to proxy else (y0k1,y1k0)
@@ -234,55 +232,58 @@ class ProxyThread(threading.Thread):
        
 
 # *----- SENDER -----*
+if __name__ == "__main__":
+    try:
 
-CONN_COUNT = int(raw_input("Enter number of bidders: "))
+        CONN_COUNT = int(raw_input("Enter number of bidders: "))
 
-# TODO: Make entering of circuit from file or dynamic
-on_input_gates = [[0, "AND", [0, 1]], 
-                [1, "XOR", [2, 3]], 
-                [2, "OR", [0,3]]]
+        # TODO: Make entering of circuit from file or dynamic
+        on_input_gates = [[0, "AND", [0, 1]], 
+                        [1, "XOR", [2, 3]], 
+                        [2, "OR", [0,3]]]
 
-mid_gates = [[3, "XOR", [0, 1]],
-             [4, "OR", [1, 2]]]
+        mid_gates = [[3, "XOR", [0, 1]],
+                    [4, "OR", [1, 2]]]
 
-output_gates = [[5, "OR", [3, 4]]]
+        output_gates = [[5, "OR", [3, 4]]]
 
-CIRCUITS = []
+        CIRCUITS = []
 
-"""
-if os.path.isfile("testckt.json"):
-    os.remove("testckt.json")
+        """
+        if os.path.isfile("testckt.json"):
+            os.remove("testckt.json")
 
-for i in range(0,5):
-    mycirc = garbler.Circuit(4, on_input_gates, mid_gates, output_gates)
-    # print("Possible input tags: ",mycirc.poss_inputs)
-    # print("----------------------------------------")
+        for i in range(0,5):
+            mycirc = garbler.Circuit(4, on_input_gates, mid_gates, output_gates)
+            # print("Possible input tags: ",mycirc.poss_inputs)
+            # print("----------------------------------------")
  
-    # TODO: Make this quit program
-    if mycirc.num_inputs != CONN_COUNT:
-        raise ValueError("Number of inputs to circuit and bidders don't match!")
+            # TODO: Make this quit program
+            if mycirc.num_inputs != CONN_COUNT:
+                raise ValueError("Number of inputs to circuit and bidders don't match!")
     
-    # TODO: Get CIRCUITS from offline step
-    CIRCUITS.append(mycirc)
-    filename = "testckt.json"
-    mycirc.prep_for_json_cut_n_choose(filename)
-"""
+            # TODO: Get CIRCUITS from offline step
+            CIRCUITS.append(mycirc)
+            filename = "testckt.json"
+            mycirc.prep_for_json_cut_n_choose(filename)
+        """
 
-sender_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sender_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+        sender_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sender_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
 
-# HOST = 127.0.0.1
-# PORT = 50000
-sender_server.bind(('127.0.0.1',50000))
-
-
-# allow sender server to spawn several threads when proxy connects with new client
-print("Sender server started at : ",sender_server.getsockname())
-
-while True:
-    sender_server.listen(1)
-    proxysock, proxyaddr = sender_server.accept()
-    newthread = ProxyThread(proxyaddr,proxysock)
-    newthread.start()
+        # HOST = 127.0.0.1
+        # PORT = 50000
+        sender_server.bind(('127.0.0.1',50000))
 
 
+        # allow sender server to spawn several threads when proxy connects with new client
+        print("Sender server started at : ",sender_server.getsockname())
+
+        while True:
+            sender_server.listen(1)
+            proxysock, proxyaddr = sender_server.accept()
+            newthread = ProxyThread(proxyaddr,proxysock)
+            newthread.start()
+    except KeyboardInterrupt:
+        print("Shutting down...")
+        exit(0)

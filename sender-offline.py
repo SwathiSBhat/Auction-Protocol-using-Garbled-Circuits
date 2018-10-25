@@ -2,16 +2,14 @@ from __future__ import print_function
 
 import socket
 import threading
-import GM  
-from commitment import Double_Commitment 
+from util.commitment import Double_Commitment 
 import random 
 import hashlib 
 import json 
-import util
-import cuberoot 
 import garbler  
 import os 
 import pickle
+from util import *
 
 #variables
 MAX_DATA_RECV = 999999
@@ -166,57 +164,65 @@ class ProxyThread(threading.Thread):
         self.proxy_socket.send(data.encode())
         print("Sent seleted keys to proxy: ",keys_selected)
 
-        with open("init.json","w") as f:
+        with open("test/init.json","w") as f:
             data = {"pub_key":pub_key,"priv_key":priv_key,"CONN_COUNT":CONN_COUNT,"A":A_All,"indices":indices}
             json.dump(data,f)
 
-# creating socket and connecting to single proxy
-sender_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sender_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
-
-sender_server.bind(('',0))
-
-# allow sender server to spawn several threads when proxy connects with new client
-print("Sender server started at : ",sender_server.getsockname())
-
-
 if __name__ == "__main__":
-    
-    CONN_COUNT = int(raw_input("Enter number of bidders: "))
+   
+    try:
+        # creating socket and connecting to single proxy
+        sender_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sender_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
 
-    on_input_gates = [[0, "AND", [0, 1]], 
+        sender_server.bind(('',0))
+        # allow sender server to spawn several threads when proxy connects with new client
+        print("Sender server started at : ",sender_server.getsockname())
+    except socket.error as e:
+        print("An error occurred : ",e)
+
+
+    try: 
+        try:
+            CONN_COUNT = int(raw_input("Enter number of bidders: "))
+        except ValueError:
+            print("Please enter integer value")
+            exit(0)
+
+        on_input_gates = [[0, "AND", [0, 1]], 
                     [1, "XOR", [2, 3]], 
                     [2, "OR", [0,3]]]
 
-    mid_gates = [[3, "XOR", [0, 1]],
+        mid_gates = [[3, "XOR", [0, 1]],
                  [4, "OR", [1, 2]]]
 
-    output_gates = [[5, "OR", [3, 4]]]
+        output_gates = [[5, "OR", [3, 4]]]
 
-    # remove old cut-and-choose.json, comm.json, keys.json
-    # TODO: Add this check inside prep_for_json()
-    # TODO: Check if write rewrites. If rewritten this line not needed
-    if os.path.isfile("cut-and-choose.json"):
-        os.remove("cut-and-choose.json")
-    # os.remove("comm.json")
+        # remove old cut-and-choose.json, comm.json, keys.json
+        if os.path.isfile("test/cut-and-choose.json"):
+            os.remove("test/cut-and-choose.json")
     
-    # list containing all circuit objects
-    CIRCUITS = []
+        # list containing all circuit objects
+        CIRCUITS = []
 
-    for i in range(0,n):
-        mycirc = garbler.Circuit(CONN_COUNT, on_input_gates, mid_gates, output_gates)
-        # print("Circuit number: {} Possible inputs: {}".format(i+1,mycirc.poss_inputs))
-        filename = "cut-and-choose.json"
-        mycirc.prep_for_json_cut_n_choose(filename) 
-        CIRCUITS.append(mycirc)
+        for i in range(0,n):
+            mycirc = garbler.Circuit(CONN_COUNT, on_input_gates, mid_gates, output_gates)
+            # print("Circuit number: {} Possible inputs: {}".format(i+1,mycirc.poss_inputs))
+            filename = "cut-and-choose.json"
+            mycirc.prep_for_json_cut_n_choose(filename) 
+            CIRCUITS.append(mycirc)
 
-    # print("Circuit objects: ",CIRCUITS)
-    with open("circuit.data","wb") as f:
-        pickle.dump(CIRCUITS, f)
-    
-    sender_server.listen(1)
-    proxysock, proxyaddr = sender_server.accept()
-    newthread = ProxyThread(proxyaddr,proxysock)
-    newthread.start()
+        # print("Circuit objects: ",CIRCUITS)
+        with open("circuit.data","wb") as f:
+            pickle.dump(CIRCUITS, f)
+   
+        sender_server.listen(1)
+        proxysock, proxyaddr = sender_server.accept()
+        newthread = ProxyThread(proxyaddr,proxysock)
+        newthread.start()
+
+    except KeyboardInterrupt:
+        print("Shutting down...")
+        exit(0)
 
 

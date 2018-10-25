@@ -1,7 +1,6 @@
 from cryptography.fernet import Fernet
 from random import SystemRandom
 import json
-# from custom_json import *
 
 cryptorand = SystemRandom()
 
@@ -205,7 +204,7 @@ class Circuit(object):
             else:
                 j["gates"][gate.g_id] = gate_json
 
-        with open('garbled_circuit.json','w') as f:
+        with open('test/garbled_circuit.json','w') as f:
             json.dump(j,f)
         
 
@@ -221,7 +220,7 @@ class Circuit(object):
             else:
                 j["gates"][gate.g_id] = gate_json
 
-        with open(filename,'a') as f:
+        with open("test/"+filename,'a') as f:
             json.dump(j,f)
             f.write("\n")
     

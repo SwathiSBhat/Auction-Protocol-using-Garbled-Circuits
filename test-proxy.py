@@ -7,9 +7,9 @@ import json
 import thread
 import threading 
 import hashlib
-import util 
-import gc_util 
+from util import *
 import evaluator
+from collections import Counter
 
 # variables
 BACKLOG = 50
@@ -23,6 +23,7 @@ n = 3
 # stores all chosen tags received from sender
 TAGS = []
 TAGS_ALL = []
+OUTPUTS = []
 
 # create lock to keep track of number
 # of connections whenever new bidder joins
@@ -66,7 +67,7 @@ class ClientThread(threading.Thread):
             count = data.get("count")
             print("number of bidders: ",count)
             TAGS = [[None for x in range(count)] for y in range(n)]
-            print("Iniialized TAGS to: ",TAGS)
+            print("Initialized TAGS to: ",TAGS)
 
         """
         VPOT Protocol
@@ -121,6 +122,13 @@ class ClientThread(threading.Thread):
             hash_z0 = hashlib.sha256(format(z_a,'b')).hexdigest()
             hash_z1 = hashlib.sha256(format(z_b,'b')).hexdigest()
             # print("H(z0^3/x0):  ",hash_z0,"\n H(z1^3/x1):  ",hash_z1)
+            
+            print("-------------------------------------")
+            if ( hash_z0 == comm[i][0][0] or hash_z0 == comm[i][1][0] ) and ( hash_z1 == comm[i][0][0] ) or ( hash_z1 == comm[i][1][0] ):
+                print("Verified sender tags")
+            else:
+                print("The sender isn't sending the right tags")
+            print("-------------------------------------")
 
             # FINAL : Verify c published by sender
             # TODO: Verify c publshed by sender
@@ -190,9 +198,10 @@ class ClientThread(threading.Thread):
 
         # ------- EVALUATOR -------- 
         if count == CONN_COUNT:
+            global OUTPUTS 
             # cktcount = to keep circuit count to evaluate
             cktcount = 0
-            with open("cut-and-choose.json") as f:
+            with open("test/cut-and-choose.json") as f:
                 for i in range(0,len(indices_eval)):
                     if cktcount != indices_eval[i]:
                         while cktcount != indices_eval[i]:
@@ -203,9 +212,40 @@ class ClientThread(threading.Thread):
                     data = json.loads(line)
                     cktcount += 1
                     mycirc = evaluator.Circuit(data)
-                    print(mycirc.fire(TAGS[i]))
+                    output = mycirc.fire(TAGS[i])
+                    OUTPUTS.append(output)
+                    # print(mycirc.fire(TAGS[i]))
                     print("-------------------------------------")
         
+
+            # checking for majority elements in output list
+            print("OUTPUTS: ",OUTPUTS)
+            j = 0
+            ele = []
+            # ele = stores distinct output gates
+            # count_maj = stores count of 1 or 0 outputs
+            for i in range(0,len(OUTPUTS)):
+                for keys in OUTPUTS[i]:
+                    if keys not in ele:
+                        ele.append(keys)
+            print("Distinct outputs: ",ele)
+            
+            for i in range(0,len(ele)):
+                count_maj = []
+                for l in range(0,n):
+                    count_maj.append(OUTPUTS[l+j][ele[i]])
+                counter = Counter(count_maj)
+                print("All outputs for gate[{}] : {}".format(ele[i],counter))
+                value, maj_count = counter.most_common()[0]
+                if maj_count > n/2:
+                    print("gate[{}] output = {}".format(ele[i],value))
+                else:
+                    print("No majority output - output withheld")
+
+            print("-------------------------------------")
+            server.close()
+            print("Shutting down...")
+            os._exit(0)
         
         # server.close()
         print("Server at {} disconnected".format(clientaddr))
@@ -215,17 +255,22 @@ class ClientThread(threading.Thread):
         # TODO : If proxy quits, quit client and sender 
         # TODO : Figure out where to close client socket
 
+if __name__ == "__main__":
+    try:
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+        server.bind(('127.0.0.1',50001))
 
-server.bind(('127.0.0.1',50001))
+        print("Proxy server started at ", server.getsockname())
 
-print("Proxy server started at ", server.getsockname())
+        while True:
+            server.listen(BACKLOG)
+            clientsock, clientaddr = server.accept()
+            newthread = ClientThread(clientaddr, clientsock)
+            newthread.start()
+    except KeyboardInterrupt:
+        print("Shutting down...")
+        exit(0)
 
-while True:
-    server.listen(BACKLOG)
-    clientsock, clientaddr = server.accept()
-    newthread = ClientThread(clientaddr, clientsock)
-    newthread.start()
 

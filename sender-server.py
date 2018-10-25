@@ -2,13 +2,11 @@ from __future__ import print_function
 
 import socket
 import threading
-import GM  
-from commitment import Double_Commitment 
+from util.commitment import Double_Commitment 
 import random 
 import hashlib 
 import json 
-import util
-import cuberoot 
+from util import *
 import garbler  
 import os 
 
@@ -21,12 +19,11 @@ class ProxyThread(threading.Thread):
         threading.Thread.__init__(self)
         self.proxy_socket = proxysock
         print("New proxy connection made at: ", proxyaddr)
-
+    
     def run(self):
         """
         VPOT
         """
-        
         # creation of RSA modulus n by Sender i.e n=p*q
         # TODO: check for bit size for RSA primes
         # TODO: check if this n is the same as that used in GM
@@ -44,11 +41,15 @@ class ProxyThread(threading.Thread):
         # connection count received from proxy
         count = data.get("conn_count")
         print("Received conn_count {} from proxy",count)
-        # TODO: Add method to end if count > CONN_COUNT
+        print("---------------------------------")
+        
+        """
         if count > CONN_COUNT:
             print("Number of bidders can't be greater than number of inputs")
-        print("---------------------------------")
-
+            print("Shutting down...")
+            os._exit(0)
+        """
+        
         # 1. Sender chooses tags t0,t1 and an integer C  
         tags = []
         print("CONN_COUNT: ",count)
@@ -59,7 +60,7 @@ class ProxyThread(threading.Thread):
             tags.append(t0)
             tags.append(t1)
         except(IndexError):
-            raise ValueError("Number of bidders can't be greater than no of inputs")
+            raise ValueError("Something went wrong with the inputs")
 
         print("---------------------------------")
 
@@ -137,6 +138,9 @@ class ProxyThread(threading.Thread):
         self.proxy_socket.send(data.encode())
         print("Sent u: {} z0: {} z1: {} to proxy".format(u_str,z0,z1))
 
+        # TODO - IMPORTANT - Send c along with prev
+        # step since synchronization can cause problem
+        # in few cases
         # Sender reveals c=a^bs by decommitting uv=E[a]E[bs]=E[c]
         # print("u[0]: {} type:u[0]: {} v: {} type(v): {}".format(u[0],type(u[0]),v,type(v)))
         uv = u[0]*v_list[0]
@@ -154,9 +158,9 @@ class ProxyThread(threading.Thread):
 
 # *----- SENDER ------*
 
-CONN_COUNT = int(raw_input("Enter number of bidders: "))
 
 # TODO: Make entering of circuit from file or dynamic
+"""
 on_input_gates = [[0, "AND", [0, 1]], 
                 [1, "XOR", [2, 3]], 
                 [2, "OR", [0,3]]]
@@ -165,14 +169,24 @@ mid_gates = [[3, "XOR", [0, 1]],
              [4, "OR", [1, 2]]]
 
 output_gates = [[5, "OR", [3, 4]]]
+"""
 
-mycirc = garbler.Circuit(4, on_input_gates, mid_gates, output_gates)
+with open("test/circuit.json",'r') as f:
+    data = json.load(f)
+data = json_util.byteify(data)
+
+CONN_COUNT = data.get("num_inputs")
+on_input_gates = data.get("on_input_gates")
+mid_gates = data.get("mid_gates")
+output_gates = data.get("output_gates")
+
+mycirc = garbler.Circuit(CONN_COUNT, on_input_gates, mid_gates, output_gates)
 # print("Possible input tags: ",mycirc.poss_inputs)
 # print("----------------------------------------")
  
-# TODO :Make this quit program
 if mycirc.num_inputs != CONN_COUNT:
     raise ValueError("Number of inputs to circuit and bidders don't match!")
+    os._exit(0)    
 
 mycirc.prep_for_json()
 
@@ -186,9 +200,13 @@ sender_server.bind(('',0))
 print("Sender server started at : ",sender_server.getsockname())
 
 while True:
-    sender_server.listen(1)
-    proxysock, proxyaddr = sender_server.accept()
-    newthread = ProxyThread(proxyaddr,proxysock)
-    newthread.start()
+    try:
+        sender_server.listen(1)
+        proxysock, proxyaddr = sender_server.accept()
+        newthread = ProxyThread(proxyaddr,proxysock)
+        newthread.start()
+    except KeyboardInterrupt:
+        print("Shutting down....")
+        exit(0)
 
 
