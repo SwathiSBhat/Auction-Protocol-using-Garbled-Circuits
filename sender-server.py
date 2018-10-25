@@ -158,9 +158,9 @@ class ProxyThread(threading.Thread):
 
 # *----- SENDER ------*
 
-CONN_COUNT = int(raw_input("Enter number of bidders: "))
 
 # TODO: Make entering of circuit from file or dynamic
+"""
 on_input_gates = [[0, "AND", [0, 1]], 
                 [1, "XOR", [2, 3]], 
                 [2, "OR", [0,3]]]
@@ -169,14 +169,24 @@ mid_gates = [[3, "XOR", [0, 1]],
              [4, "OR", [1, 2]]]
 
 output_gates = [[5, "OR", [3, 4]]]
+"""
 
-mycirc = garbler.Circuit(4, on_input_gates, mid_gates, output_gates)
+with open("test/circuit.json",'r') as f:
+    data = json.load(f)
+data = json_util.byteify(data)
+
+CONN_COUNT = data.get("num_inputs")
+on_input_gates = data.get("on_input_gates")
+mid_gates = data.get("mid_gates")
+output_gates = data.get("output_gates")
+
+mycirc = garbler.Circuit(CONN_COUNT, on_input_gates, mid_gates, output_gates)
 # print("Possible input tags: ",mycirc.poss_inputs)
 # print("----------------------------------------")
  
-# TODO :Make this quit program
 if mycirc.num_inputs != CONN_COUNT:
     raise ValueError("Number of inputs to circuit and bidders don't match!")
+    os._exit(0)    
 
 mycirc.prep_for_json()
 
@@ -195,7 +205,7 @@ while True:
         proxysock, proxyaddr = sender_server.accept()
         newthread = ProxyThread(proxyaddr,proxysock)
         newthread.start()
-    except:
+    except KeyboardInterrupt:
         print("Shutting down....")
         exit(0)
 
