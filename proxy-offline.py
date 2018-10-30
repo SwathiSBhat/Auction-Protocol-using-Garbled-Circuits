@@ -8,7 +8,7 @@ import thread
 import threading 
 import hashlib
 from util import *
-import evaluator
+import evaluator_test 
 import random
 import pickle 
 
@@ -137,7 +137,7 @@ class ClientThread(threading.Thread):
                 count += 1
                 print("---------------------------------------")
                 print("Input to circuit {} = {}".format(i,TAGS))
-                mycirc = evaluator.Circuit(data)
+                mycirc = evaluator_test.Circuit(data)
                 print(mycirc.fire(TAGS))
                 print("---------------------------------------")
 

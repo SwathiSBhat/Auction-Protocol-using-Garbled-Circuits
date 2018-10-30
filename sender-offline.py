@@ -6,7 +6,7 @@ from util.commitment import Double_Commitment
 import random 
 import hashlib 
 import json 
-import garbler  
+import garbler_test  
 import os 
 import pickle
 from util import *
@@ -183,6 +183,7 @@ if __name__ == "__main__":
 
 
     try: 
+        """
         try:
             CONN_COUNT = int(raw_input("Enter number of bidders: "))
         except ValueError:
@@ -197,7 +198,16 @@ if __name__ == "__main__":
                  [4, "OR", [1, 2]]]
 
         output_gates = [[5, "OR", [3, 4]]]
+        """
+        with open("test/circuit.json",'r') as f:
+            data = json.load(f)
+        data = json_util.byteify(data)
 
+        CONN_COUNT = data.get("num_inputs")
+        on_input_gates = data.get("on_input_gates")
+        mid_gates = data.get("mid_gates")
+        inter_gates = data.get("inter_gates")
+        output_gates = data.get("output_gates")
         # remove old cut-and-choose.json, comm.json, keys.json
         if os.path.isfile("test/cut-and-choose.json"):
             os.remove("test/cut-and-choose.json")
@@ -206,7 +216,7 @@ if __name__ == "__main__":
         CIRCUITS = []
 
         for i in range(0,n):
-            mycirc = garbler.Circuit(CONN_COUNT, on_input_gates, mid_gates, output_gates)
+            mycirc = garbler_test.Circuit(CONN_COUNT, on_input_gates, mid_gates, inter_gates, output_gates)
             # print("Circuit number: {} Possible inputs: {}".format(i+1,mycirc.poss_inputs))
             filename = "cut-and-choose.json"
             mycirc.prep_for_json_cut_n_choose(filename) 

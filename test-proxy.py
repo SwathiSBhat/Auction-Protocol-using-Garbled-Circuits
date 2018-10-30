@@ -67,7 +67,7 @@ class ClientThread(threading.Thread):
             count = data.get("count")
             print("number of bidders: ",count)
             TAGS = [[None for x in range(count)] for y in range(n)]
-            print("Initialized TAGS to: ",TAGS)
+            # print("Initialized TAGS to: ",TAGS)
 
         """
         VPOT Protocol
@@ -125,7 +125,7 @@ class ClientThread(threading.Thread):
             
             print("-------------------------------------")
             if ( hash_z0 == comm[i][0][0] or hash_z0 == comm[i][1][0] ) and ( hash_z1 == comm[i][0][0] ) or ( hash_z1 == comm[i][1][0] ):
-                print("Verified sender tags")
+                print("Verified sender tags for circuit {}".format(indices_eval[i]))
             else:
                 print("The sender isn't sending the right tags")
             print("-------------------------------------")
@@ -135,7 +135,7 @@ class ClientThread(threading.Thread):
             # 7. Proxy verifies that he can use x to open C0 if c=0
             # else use x to open C1 if c=1
                 
-            print("bp: {} type(bp): {}".format(bp,type(bp)))
+            # print("bp: {} type(bp): {}".format(bp,type(bp)))
             if bp==0:
                 k = util.modular_div_util(Z[i][0],X[i],N)
             else:
@@ -148,34 +148,34 @@ class ClientThread(threading.Thread):
             k_hash = hashlib.sha256(format(k,'b')).hexdigest()
         
             # DEBUG:
-            print("k: {} --------- k_hash: {}".format(k,k_hash))
+            # print("k: {} --------- k_hash: {}".format(k,k_hash))
             # print("bp: ",bp," Type bp = ",type(bp))
         
             k_cube = pow(k,3,N)
             k_cube_hash = hashlib.sha256(format(k_cube,'b')).hexdigest()
             if k_cube_hash == comm[i][0][0]:
-                print("Opened C0, k_cube_hash: ",k_cube_hash)
+                print("Opened C0")
             elif k_cube_hash == comm[i][1][0]:
-                print("Opened C1, k_cube_hash: ",k_cube_hash)
+                print("Opened C1")
 
             if int(c[i]) == 0:
                 tag_int = int(k_hash,16)^comm[i][0][1]
             else:
                 tag_int = int(k_hash, 16)^comm[i][1][1]
     
-            print("c: {}, k:{} ".format(c[i],k))
-            print("tag_int: ",tag_int) 
+            # print("c: {}, k:{} ".format(c[i],k))
+            # print("tag_int: ",tag_int) 
 
             print("-------------------------------------")
         
             tag = gc_util.decode_str(tag_int)
             lock.acquire()
-            print("i: {} CONN_COUNT-1: {}".format(i,CONN_COUNT-1))
+            # print("i: {} CONN_COUNT-1: {}".format(i,CONN_COUNT-1))
             TAGS[i][CONN_COUNT-1] = tag 
-            print("TAGS[{}][{}] = {}".format(i,CONN_COUNT-1,TAGS[i][CONN_COUNT-1]))
+            # print("TAGS[{}][{}] = {}".format(i,CONN_COUNT-1,TAGS[i][CONN_COUNT-1]))
             lock.release()
             # print("TAGS: ",TAGS)
-            print("-------------------------------------")
+            # print("-------------------------------------")
     
             # print("Inputs to circuit number {}: {}".format(indices[i],TAGS))
         
@@ -207,7 +207,7 @@ class ClientThread(threading.Thread):
                         while cktcount != indices_eval[i]:
                             cktcount += 1
                             line = f.readline()
-                    print("cktcount {} cktnumber: {}".format(cktcount,indices_eval[i]))
+                    # print("cktcount {} cktnumber: {}".format(cktcount,indices_eval[i]))
                     line = f.readline()
                     data = json.loads(line)
                     cktcount += 1
@@ -215,7 +215,7 @@ class ClientThread(threading.Thread):
                     output = mycirc.fire(TAGS[i])
                     OUTPUTS.append(output)
                     # print(mycirc.fire(TAGS[i]))
-                    print("-------------------------------------")
+                    # print("-------------------------------------")
         
 
             # checking for majority elements in output list

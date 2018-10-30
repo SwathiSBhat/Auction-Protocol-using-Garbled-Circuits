@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from cryptography.fernet import Fernet
 from random import SystemRandom
 import json
@@ -153,14 +155,82 @@ class OutputGate(Gate):
     def keypair(self):
         return [bytes([0]), bytes([1])]
 
-    def __init__(self, circuit, g_id, gate_type, inputs):
+    def __init__(self, circuit, g_id, gate_type, inputs, flag, interg):
+        self.flag = flag
+        self.interg = interg 
         Gate.__init__(self, circuit, g_id, gate_type, inputs)
 
+    def grab_wires(self):
+        #print("************")
+        #print("self.interg: ",self.interg)
+        #print("************")
+        if self.flag == True:
+            if self.interg[3][0] == True and self.interg[3][1] == False:
+                return {0: self.circuit.poss_inputs[self.inputs[0]],
+                        1: self.circuit.gates[self.inputs[1]].outputs}
+            elif self.interg[3][0] == False and self.interg[3][1] == True:
+                return {0: self.circuit.gates[self.inputs[0]].outputs,
+                        1: self.circuit.poss_inputs[self.inputs[1]]}
+            # TODO : Quit program is ValueError raised
+            else:
+                raise ValueError("Invalid output gate")
+        else: 
+            return {0: self.circuit.gates[self.inputs[0]].outputs,
+                    1: self.circuit.gates[self.inputs[1]].outputs}
+    
+    def grab_inputs(self):
+        if self.flag == True:
+            if self.interg[3][0] == True and self.interg[3][1] == False:
+                return {0: self.circuit.inputs[self.inputs[0]],
+                        1: self.circuit.gates[self.inputs[1]].fire()}
+            elif self.interg[3][0] == False and self.interg[3][1] == True:
+                return {0: self.circuit.gates[self.inputs[0]].fire(),
+                        1: self.circuit.inputs[self.inputs[1]]}
+            else:
+                raise ValueError("Invalid Output Gate")
+        else: 
+            return {0: self.circuit.gates[self.inputs[0]].fire(),
+                    1: self.circuit.gates[self.inputs[1]].fire()}
 
+
+
+class InterGate(Gate):
+
+    # input type = dict containing {0:True/False, 1:False/True}
+    # True = input number is an input wire
+    # False = input number is an input gate
+    # input_type = {}
+    
+    def __init__(self, circuit, g_id, gate_type, inputs, input_type):
+        self.input_type = input_type
+        # print("input_type of INTERMEDIATE GATE: ",input_type)
+        Gate.__init__(self, circuit, g_id, gate_type, inputs)
+
+    def grab_wires(self):
+        if self.input_type[0] == True and self.input_type[1] == False:
+            return {0: self.circuit.poss_inputs[self.inputs[0]],
+                    1: self.circuit.gates[self.inputs[1]].outputs}
+        elif self.input_type[0] == False and self.input_type[1] == True:
+            return {0: self.circuit.gates[self.inputs[0]].outputs,
+                    1: self.circuit.poss_inputs[self.inputs[1]]}
+        # TODO : Quit program is ValueError raised
+        else:
+            raise ValueError("Invalid Intermediate Gate")
+
+    def grab_inputs(self):
+        if self.input_type[0] == True and self.input_type[1] == False:
+            return {0: self.circuit.inputs[self.inputs[0]],
+                    1: self.circuit.gates[self.inputs[1]].fire()}
+        elif self.input_type[0] == False and self.input_type[1] == True:
+            return {0: self.circuit.gates[self.inputs[0]].fire(),
+                    1: self.circuit.inputs[self.inputs[1]]}
+        else:
+            raise ValueError("Invalid Intermediate Gate")
+    
 
 class Circuit(object):
 
-    def __init__(self, num_inputs, on_input_gates, mid_gates, output_gates):
+    def __init__(self, num_inputs, on_input_gates, mid_gates, inter_gates, output_gates):
         # num_inputs = no. of input wires
         # poss_inputs = generates labels for 0 and 1 for each wire
         self.num_inputs = num_inputs
@@ -174,10 +244,24 @@ class Circuit(object):
         for g in mid_gates:
             self.gates[g[0]] = Gate(self, g[0], g[1], {0: g[2][0], 1: g[2][1]})
 
+        # DEBUG 
+        for g in inter_gates:
+            self.gates[g[0]] = InterGate(self, g[0], g[1], {0: g[2][0], 1: g[2][1]}, {0: g[3][0], 1: g[3][1]})
+
         self.output_gate_ids = []
         for g in output_gates:
             self.output_gate_ids.append(g[0])
-            self.gates[g[0]] = OutputGate(self, g[0], g[1], {0: g[2][0], 1: g[2][1]})
+            flag = False
+            interg = []
+            # condition to check if output_gate = inter_gate
+            # if yes, grab_wires should be changed for output_gate
+            if g[0] in [x[0] for x in inter_gates]:
+                flag = True
+                interg = x
+                # print("************")
+                # print("interg: ",interg)
+                # print("************")
+            self.gates[g[0]] = OutputGate(self, g[0], g[1], {0: g[2][0], 1: g[2][1]}, flag, interg)
        
         # DEBUG 
         # print("Gates: ",self.gates[0])
@@ -195,12 +279,34 @@ class Circuit(object):
     def prep_for_json(self):
         j = {"num_inputs": self.num_inputs,
                 "on_input_gates": {},
+                "inter_gates": {},
                 "gates": {},
                 "output_gate_ids": self.output_gate_ids}
+        
         for g_id, gate in self.gates.items():
+            # print("-----------------------------")
+            # print("gate id: {} gate type: {}".format(g_id,type(gate)))
             gate_json = {"table": gate.table, "inputs": gate.inputs}
             if type(gate) is OnInputGate:
                 j["on_input_gates"][gate.g_id] = gate_json
+            
+            #DEBUG
+            # include gates of type OutputGate but are also InterGate
+            # TODO: clean code - rename interg to input_type
+            elif (type(gate) is InterGate) or (type(gate) is OutputGate and gate.flag == True) :
+                if type(gate) == InterGate:
+                    gate_json = {"table": gate.table, "inputs": gate.inputs, "intergateinfo": gate.input_type}
+                else:
+                    # print("********************")
+                    # print("interg[0] ",gate.interg[3][0],"interg[1]: ",gate.interg[3][1])
+                    # print("********************")
+                    input_type = {0: gate.interg[3][0], 1: gate.interg[3][1] }
+                    gate_json = {"table": gate.table, "inputs": gate.inputs, "intergateinfo": input_type}
+                    # add OutputGate to gates json
+                    j["gates"][gate.g_id] = gate_json 
+                
+                j["inter_gates"][gate.g_id] = gate_json 
+
             else:
                 j["gates"][gate.g_id] = gate_json
 
@@ -209,14 +315,26 @@ class Circuit(object):
         
 
     def prep_for_json_cut_n_choose(self, filename):
+        
         j = {"num_inputs": self.num_inputs,
                 "on_input_gates": {},
+                "inter_gates": {},
                 "gates": {},
                 "output_gate_ids": self.output_gate_ids}
         for g_id, gate in self.gates.items():
             gate_json = {"table": gate.table, "inputs": gate.inputs}
             if type(gate) is OnInputGate:
                 j["on_input_gates"][gate.g_id] = gate_json
+            elif (type(gate) is InterGate) or (type(gate) is OutputGate and gate.flag == True) :
+                if type(gate) == InterGate:
+                    gate_json = {"table": gate.table, "inputs": gate.inputs, "intergateinfo": gate.input_type}
+                else:
+                    input_type = {0: gate.interg[3][0], 1: gate.interg[3][1] }
+                    gate_json = {"table": gate.table, "inputs": gate.inputs, "intergateinfo": input_type}
+                    # add OutputGate to gates json
+                    j["gates"][gate.g_id] = gate_json 
+                j["inter_gates"][gate.g_id] = gate_json 
+                 
             else:
                 j["gates"][gate.g_id] = gate_json
 
@@ -226,11 +344,12 @@ class Circuit(object):
     
 
 if __name__ == "__main__":
-    on_input_gates = [[0, "AND", [0, 1]],[1, "XOR", [2, 3]],[2, "OR", [0,3]]]
-    mid_gates = [[3, "XOR", [0, 1]],[4, "OR", [1, 2]]]
-    output_gates = [[5, "OR", [3, 4]]]
-    mycirc = Circuit(4, on_input_gates, mid_gates, output_gates)
-    my_input = [x[y] for x, y in zip(mycirc.poss_inputs, [0, 1, 0, 1])]
+    on_input_gates = [[0, "XOR", [0, 1]]]
+    mid_gates = []
+    inter_gates = [[1, "AND", [0, 2], [False, True]], [2, "OR", [1, 3], [False, True]]    , [3, "AND", [2, 4], [False, True]], [4, "AND", [3, 5], [False, True]], [5, "AND", [4, 6], [False, True]]]
+    output_gates = [[5, "AND", [4, 6]]]
+    mycirc = Circuit(7, on_input_gates, mid_gates, inter_gates, output_gates)
+    my_input = [x[y] for x, y in zip(mycirc.poss_inputs, [1, 0, 1, 0, 1, 0, 1])]
     mycirc.fire(my_input)
     print("Possible inputs: ",mycirc.poss_inputs)
     mycirc.prep_for_json()

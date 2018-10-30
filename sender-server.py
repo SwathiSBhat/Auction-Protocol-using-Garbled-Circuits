@@ -7,7 +7,7 @@ import random
 import hashlib 
 import json 
 from util import *
-import garbler  
+import garbler_test  
 import os 
 
 #variables
@@ -158,8 +158,6 @@ class ProxyThread(threading.Thread):
 
 # *----- SENDER ------*
 
-
-# TODO: Make entering of circuit from file or dynamic
 """
 on_input_gates = [[0, "AND", [0, 1]], 
                 [1, "XOR", [2, 3]], 
@@ -178,9 +176,10 @@ data = json_util.byteify(data)
 CONN_COUNT = data.get("num_inputs")
 on_input_gates = data.get("on_input_gates")
 mid_gates = data.get("mid_gates")
+inter_gates = data.get("inter_gates")
 output_gates = data.get("output_gates")
 
-mycirc = garbler.Circuit(CONN_COUNT, on_input_gates, mid_gates, output_gates)
+mycirc = garbler_test.Circuit(CONN_COUNT, on_input_gates, mid_gates, inter_gates, output_gates)
 # print("Possible input tags: ",mycirc.poss_inputs)
 # print("----------------------------------------")
  

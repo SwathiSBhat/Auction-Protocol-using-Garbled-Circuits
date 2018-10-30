@@ -7,7 +7,7 @@ import thread
 import threading 
 import hashlib
 from util import *
-import evaluator
+import evaluator_test 
 
 # variables
 BACKLOG = 50
@@ -151,8 +151,8 @@ class ClientThread(threading.Thread):
         else:
             tag_int = int(k_hash, 16)^C1[1]
     
-        print("c: {}, k:{} ".format(c,k))
-        print("tag_int: ",tag_int) 
+        #print("c: {}, k:{} ".format(c,k))
+        #print("tag_int: ",tag_int) 
         
         print("-------------------------------------")
         
@@ -165,9 +165,9 @@ class ClientThread(threading.Thread):
         tag = gc_util.decode_str(tag_int)
         lock.acquire()
         TAGS[CONN_COUNT-1] = tag 
-        print("TAGS[{}] = {}".format(CONN_COUNT-1,TAGS[CONN_COUNT-1]))
+        #print("TAGS[{}] = {}".format(CONN_COUNT-1,TAGS[CONN_COUNT-1]))
         lock.release()
-        print("TAGS: ",TAGS)
+        #print("TAGS: ",TAGS)
         print("-------------------------------------")
         
         # ------ EVALUATION ------
@@ -188,7 +188,7 @@ if __name__ == "__main__":
     with open('test/garbled_circuit.json') as data_file:
         data = json.load(data_file)
     
-    mycirc = evaluator.Circuit(data)
+    mycirc = evaluator_test.Circuit(data)
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)

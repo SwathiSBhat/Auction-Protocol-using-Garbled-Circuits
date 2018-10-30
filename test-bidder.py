@@ -16,10 +16,10 @@ indices = [1,3,4]
 VPOT Protocol
 """
 def vpot_client():
-    # b = int(raw_input("Enter your bit(0/1): "))
+    b = int(raw_input("Enter your bit(0/1): "))
 
     # DEBUG
-    b = 1
+    #b = 1
 
     # 3. Chooser receives N,C from proxy and splits b into b = bs ^ bp
     # Select x in Zn*. If bp=0 x0=x^3 else x0=x^3/C. Also compute v=E[bs]

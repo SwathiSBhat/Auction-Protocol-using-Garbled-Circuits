@@ -96,16 +96,16 @@ class ProxyThread(threading.Thread):
         # create tags, comm, keys for 1 bidder at a time
         # => 2 tags, 2 commitments, 2 keys
         for i in indices_eval:
-            print("CONN_COUNT: ",count)
+            # print("CONN_COUNT: ",count)
             try:
                 t0 = CIRCUITS[i].poss_inputs[count-1][0]
                 t1 = CIRCUITS[i].poss_inputs[count-1][1]
-                print("Tag0: {} \n Tag1: {}".format(t0,t1))
+                # print("Tag0: {} \n Tag1: {}".format(t0,t1))
 
                 # DEBUG
                 tag_int0 = gc_util.encode_str(t0)
                 tag_int1 = gc_util.encode_str(t1)
-                print("TagInt0: {} \n TagInt1: {}".format(tag_int0,tag_int1))
+                # print("TagInt0: {} \n TagInt1: {}".format(tag_int0,tag_int1))
             
             except(IndexError):
                 raise ValueError("Number of bidders can't be greater than no of inputs")
@@ -123,7 +123,7 @@ class ProxyThread(threading.Thread):
             # Transmit (C0,C1), CO to proxy
 
             a = A[i][count-1]
-            print("a: ",a)
+            # print("a: ",a)
 
             """
             k = []
@@ -134,16 +134,16 @@ class ProxyThread(threading.Thread):
             """
             k.append([KEYS[i][count-1][0], KEYS[i][count-1][1]])
 
-            print("---------------------------")
-            print("i: {}, count-1: {}".format(i,count-1))
-            print("KEYS[0]:  {} KEYS[1]: {}".format(KEYS[i][count-1][0],KEYS[i][count-1][1]))
+            # print("---------------------------")
+            # print("i: {}, count-1: {}".format(i,count-1))
+            # print("KEYS[0]:  {} KEYS[1]: {}".format(KEYS[i][count-1][0],KEYS[i][count-1][1]))
 
             C0 = COMM[i][count-1][0]
             C1 = COMM[i][count-1][1]
             comm.append([C0,C1])
 
             # DEBUG
-            print("comm for circuit {}: {},{}".format(i,C0,C1))
+            # print("comm for circuit {}: {},{}".format(i,C0,C1))
 
             """
             C0 = Double_Commitment(k[a],t[a],N).commitment
@@ -158,6 +158,7 @@ class ProxyThread(threading.Thread):
             u_all.append(u)
             u_allstr.append(u_str) 
 
+        """
         print("Below printing values are for ONE BIDDER ONLY")
         print("---------------------------------")
         print("All tags for 3 circuits: ",TAGS)
@@ -173,7 +174,8 @@ class ProxyThread(threading.Thread):
         print("All CO for 3 circuits: ",commCO)
         print("---------------------------------")
         print("All u for 3 circuits: ",u_all)
-        
+        """
+
         data = json.dumps({"pub_key":pub_key, "C":C_RAND, "CO":commCO, "comm":comm, "u":u_allstr,"indices":indices_eval})
         print("-------------------------------------")
         print("Sent pub_key: {},  u: {}, CO:{}, indices:{} to proxy".format(pub_key,u_allstr,commCO,indices_eval))
@@ -204,7 +206,7 @@ class ProxyThread(threading.Thread):
             # TODO: incorporate hardness to find cube root here
             y0 = cuberoot.cuberoot_util(X0[i],p,q)
             y1 = cuberoot.cuberoot_util(X1[i],p,q)
-            print("Cube root y0: ",y0," y1: ",y1)
+            # print("Cube root y0: ",y0," y1: ",y1)
             Y.append([y0,y1])
 
             if bs==0:
@@ -234,39 +236,15 @@ class ProxyThread(threading.Thread):
 # *----- SENDER -----*
 if __name__ == "__main__":
     try:
+        with open("test/circuit.json",'r') as f:
+            data = json.load(f)
 
-        CONN_COUNT = int(raw_input("Enter number of bidders: "))
-
-        # TODO: Make entering of circuit from file or dynamic
-        on_input_gates = [[0, "AND", [0, 1]], 
-                        [1, "XOR", [2, 3]], 
-                        [2, "OR", [0,3]]]
-
-        mid_gates = [[3, "XOR", [0, 1]],
-                    [4, "OR", [1, 2]]]
-
-        output_gates = [[5, "OR", [3, 4]]]
+        CONN_COUNT = data.get("num_inputs")
+        print("-----------------------")
+        print("CONN_COUNT: ",CONN_COUNT)
+        print("-----------------------")
 
         CIRCUITS = []
-
-        """
-        if os.path.isfile("testckt.json"):
-            os.remove("testckt.json")
-
-        for i in range(0,5):
-            mycirc = garbler.Circuit(4, on_input_gates, mid_gates, output_gates)
-            # print("Possible input tags: ",mycirc.poss_inputs)
-            # print("----------------------------------------")
- 
-            # TODO: Make this quit program
-            if mycirc.num_inputs != CONN_COUNT:
-                raise ValueError("Number of inputs to circuit and bidders don't match!")
-    
-            # TODO: Get CIRCUITS from offline step
-            CIRCUITS.append(mycirc)
-            filename = "testckt.json"
-            mycirc.prep_for_json_cut_n_choose(filename)
-        """
 
         sender_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sender_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
@@ -274,7 +252,6 @@ if __name__ == "__main__":
         # HOST = 127.0.0.1
         # PORT = 50000
         sender_server.bind(('127.0.0.1',50000))
-
 
         # allow sender server to spawn several threads when proxy connects with new client
         print("Sender server started at : ",sender_server.getsockname())
