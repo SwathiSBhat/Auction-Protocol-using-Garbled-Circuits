@@ -81,13 +81,13 @@ class ProxyThread(threading.Thread):
                 try:
                     t0 = CIRCUITS[i].poss_inputs[j][0]
                     t1 = CIRCUITS[i].poss_inputs[j][1]
-                    print("Tag0: {} Tag1: {}".format(t0,t1))
+                    #print("Tag0: {} Tag1: {}".format(t0,t1))
                     tags.append(t0)
                     tags.append(t1)
                 except:
                     raise ValueError("Something went wrong with tag generation!")
 
-                print("---------------------------------")
+                #print("---------------------------------")
                 
                 keys.append(random.SystemRandom().randint(1,N-1))
                 keys.append(random.SystemRandom().randint(1,N-1))
@@ -104,7 +104,7 @@ class ProxyThread(threading.Thread):
                     k.append(keys[a])
                 else:
                     k.append(keys[1-a])
-                print("-----------------------------------")
+                #print("-----------------------------------")
             
             global A_All, KEYS, K_all, Comm_All 
             A_All.append(A)
@@ -112,26 +112,28 @@ class ProxyThread(threading.Thread):
             K_all.append(K)
             Comm_All.append(Comm)
        
-        print("----------------------------")
-        print("Keys all: ",K_all)
-        print("Selected keys: [{},{}] [{},{}], [{},{}]".format(K_all[1][0][0],K_all[1][0][1],K_all[3][0][0],K_all[3][0][1],K_all[4][0][0],K_all[4][0][1]))
-        print("----------------------------")
+        #print("----------------------------")
+        #print("Keys all: ",K_all)
+        #print("Selected keys: [{},{}] [{},{}], [{},{}]".format(K_all[1][0][0],K_all[1][0][1],K_all[3][0][0],K_all[3][0][1],K_all[4][0][0],K_all[4][0][1]))
+        #print("----------------------------")
         # print("Selected comm: [{},{}],\n [{},{}], \n [{},{}]\n".format(Comm_All[1][0][0],Comm_All[1][0][1],Comm_All[3][0][0],Comm_All[3][0][1],Comm_All[4][0][0],Comm_All[4][0][1]))
-        print("A values for all inputs*n: ",A_All)
-        print("----------------------------")
+        #print("A values for all inputs*n: ",A_All)
+        #print("----------------------------")
         
-        with open("key.data","wb") as f:
+        with open("data/key.data","wb") as f:
             pickle.dump(K_all, f)
 
-        with open("comm.data", "wb") as f:
+        with open("data/comm.data", "wb") as f:
             pickle.dump(Comm_All, f)
         
-        with open('comm.data','rb') as f:
+
+        """
+        with open('data/comm.data','rb') as f:
             new_comm = pickle.load(f)
 
         print("----------------------------")
         
-        """
+        
         count_comm = 0
         for i in range(0,n):
             for j in range(0,len(inputs)):
@@ -223,7 +225,7 @@ if __name__ == "__main__":
             CIRCUITS.append(mycirc)
 
         # print("Circuit objects: ",CIRCUITS)
-        with open("circuit.data","wb") as f:
+        with open("data/circuit.data","wb") as f:
             pickle.dump(CIRCUITS, f)
    
         sender_server.listen(1)

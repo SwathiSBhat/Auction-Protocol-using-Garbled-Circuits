@@ -96,7 +96,7 @@ class ClientThread(threading.Thread):
 
         print("----------------------------")
 
-        with open("comm.data","rb") as f:
+        with open("data/comm.data","rb") as f:
             Comm = pickle.load(f)
         
         # opening and verifying commitments

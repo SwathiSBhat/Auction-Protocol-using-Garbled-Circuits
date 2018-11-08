@@ -8,7 +8,7 @@ import thread
 import threading 
 import hashlib
 from util import *
-import evaluator
+import evaluator_test
 from collections import Counter
 
 # variables
@@ -211,7 +211,7 @@ class ClientThread(threading.Thread):
                     line = f.readline()
                     data = json.loads(line)
                     cktcount += 1
-                    mycirc = evaluator.Circuit(data)
+                    mycirc = evaluator_test.Circuit(data)
                     output = mycirc.fire(TAGS[i])
                     OUTPUTS.append(output)
                     # print(mycirc.fire(TAGS[i]))

@@ -82,13 +82,13 @@ class ProxyThread(threading.Thread):
         # print("indices recv: {} indices to eval: {}".format(indices,indices_eval))
 
         # CIRCUITS contains the circuits generated in offline step
-        with open("circuit.data","rb") as f:
+        with open("data/circuit.data","rb") as f:
             CIRCUITS = pickle.load(f)
         # print("circuits : ",CIRCUITS)
-        with open("key.data", "rb") as f:
+        with open("data/key.data", "rb") as f:
             KEYS = pickle.load(f)
         # print("keys : ",KEYS)
-        with open("comm.data", "rb") as f:
+        with open("data/comm.data", "rb") as f:
             COMM = pickle.load(f)
         # print("comm: ",COMM)
         

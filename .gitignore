@@ -1,10 +1,9 @@
 __pycache__
 *.pyc
 .DS_Store
+data/
 *.json
 *.py.swp
 *.data
 cut-and-choose.json
 garbled_circuit.json
-key.data
-comm.data
