@@ -3,6 +3,7 @@ from __future__ import print_function
 from cryptography.fernet import Fernet
 from random import SystemRandom
 import json
+import yappi 
 
 cryptorand = SystemRandom()
 
@@ -231,6 +232,7 @@ class Circuit(object):
 
     # Returns dict with o/p gate id as key and corresponding value
     # inputs = chosen wire labels to be used for computation
+    
     def fire(self, inputs):
         self.inputs = inputs
         output = {}
@@ -262,7 +264,8 @@ class Circuit(object):
                     # print("********************")
                     # print("interg[0] ",gate.interg[3][0],"interg[1]: ",gate.interg[3][1])
                     # print("********************")
-                    input_type = gate.input_type 
+                    input_type = {0: gate.input_type[0], 1: gate.input_type[1] }
+                    # input_type = gate.input_type 
                     gate_json = {"table": gate.table, "inputs": gate.inputs, "intergateinfo": input_type}
                     # add OutputGate to gates json
                     j["gates"][gate.g_id] = gate_json 

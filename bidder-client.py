@@ -18,7 +18,10 @@ VPOT Protocol
 def vpot_client():
     try:
         # TODO - check for 0/1 only
-        b = int(raw_input("Enter your bit(0/1): "))
+        # b = int(raw_input("Enter your bit(0/1): "))
+        # TODO : Check for correct input length
+        # TODO : allow bid to be entered as int
+        b = raw_input("Enter bid in binary: ")
     except ValueError:
         print("ValueError - Please enter a bit (0/1)")
         exit(0)
@@ -32,37 +35,57 @@ def vpot_client():
     print("Received pub_key: {} , C: {} from proxy".format(pub_key,C))
     print("---------------------------------------------")
 
-    bs = random.SystemRandom().getrandbits(1)
-    bp = b^bs
+    bid = []
+    bid_s = []
+    bid_p = []
+    for i in b:
+        bs = random.SystemRandom().getrandbits(1)
+        bp = int(i)^bs
+        bid.append(int(i))
+        bid_s.append(bs)
+        bid_p.append(bp)
 
-    print("bs:{}, bp:{}, b:{} ".format(bs,bp,b))
+    print("bs:{}, bp:{}, b:{} ".format(bid_s,bid_p,bid))
+    # ip_len = length of input
+    ip_len = len(bid)
+    
+    X = []
+    X0 = []
+    V = []
+    for i in range(ip_len):
+        while True:
+            x = random.SystemRandom().randint(1,N-1)
+            if util.gcd(x,N)==1:
+                break 
 
-    while True:
-        x = random.SystemRandom().randint(1,N-1)
-        if util.gcd(x,N)==1:
-            break 
+        if bid_p[i] == 0:
+            # TODO: Change x0 = pow(x,3,N)
+            x0 = (x*x*x)%N
+        else:
+            x0 = util.modular_div_util(pow(x,3),C[i],N)
 
-    if bp == 0:
-        x0 = (x*x*x)%N
-    else:
-        x0 = util.modular_div_util(pow(x,3),C,N)
+        v = GM.GM_encrypt(str(bid_s[i]),pub_key)
 
-    v = GM.GM_encrypt(str(bs),pub_key)
+        # 4. Chooser sends (x0,v,x) to proxy. Proxy sends to sender: (x0,v)
+        v_str = ''.join(str(s) for s in v)
 
-    # 4. Chooser sends (x0,v,x) to proxy. Proxy sends to sender: (x0,v)
-    v_str = ''.join(str(s) for s in v)
-    data = json.dumps({"x0":x0, "v":v_str, "x":x, "bp":bp})
-    print("Sent x0: {},v: {},x: {}, bp: {} to proxy".format(x0,v,x,bp))
+        X.append(x)
+        X0.append(x0)
+        V.append(v_str)
+    
+    data = json.dumps({"x0":X0, "v":V, "x":X, "bp":bid_p})
+    print("Sent x0: {},v: {},x: {}, bp: {} to proxy".format(X0,V,X,bid_p))
     client.send(data.encode())
-
 
     # Receive tag_int from proxy
     data = client.recv(MAX_DATA_RECV)
     data = json.loads(data.decode())
     tag_int = data.get("tag_int")
     print("Received tag_int: {} from proxy".format(tag_int))
-    tag = gc_util.decode_str(tag_int)
-    print("Decoded tag: ",tag)
+
+    for t in tag_int:
+        tag = gc_util.decode_str(t)
+        print("Decoded tag: ",tag)
 
     """
     end of VPOT

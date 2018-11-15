@@ -141,7 +141,9 @@ def generate_rsa_prime(bit_size):
     p = random.SystemRandom().randint(2**(bit_size-1), 2**(bit_size))
     if not p & 1:
         p = p + 1
-    while not miller_rabin(p):
+    # note - generating only primes p where p % 3 == 2
+    # else there are cases when cube roots don't exist
+    while miller_rabin(p) == False or (miller_rabin(p) == True and p%3!=2):
         p = p + 2
     return p
 

@@ -26,14 +26,16 @@ class Double_Commitment():
         
         # DEBUG
         #print("-------------------")
-        #print("Comm: {}, Tag_int: {}".format(Y1,tag_int))
+        #print("Comm[0]: {} Tag: {}, Tag_int: {}".format(Y1,tag,tag_int))
         #print("-------------------")
 
         witness_k_hash = hashlib.sha256(format(self.witness_k,'b')).hexdigest()
         # DEBUG:
-        # print("k: {} ------- hash_k : {}".format(witness_k,witness_k_hash))
+        #print("k: {} ------- hash_k : {}".format(witness_k,witness_k_hash))
 
         Y2 = int(witness_k_hash,16)^tag_int  
+        #print("Comm:---- {}".format(Y2))
+        #print("-------------------")
         
         # commitment Ck(tag) = (Y1,Y2)
         # TODO : Convert Y1 and Y2 to same type

@@ -1,6 +1,6 @@
 from cryptography.fernet import Fernet
 from random import SystemRandom
-import json
+import json 
 
 cryptorand = SystemRandom()
 

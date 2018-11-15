@@ -18,7 +18,7 @@ count = 0
 
 # n = number circuits to be evaluated = N/2 
 # where N = total number of circuits
-n = 3
+n = 5
 
 # stores all chosen tags received from sender
 TAGS = []

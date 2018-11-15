@@ -35,6 +35,7 @@ def cuberoot_util(a, p, q):
     n.append(q)
     m.append(cuberoot(a,p))
     m.append(cuberoot(a,q))
+    # print("a: {} prime p: {} q: {} m: {}".format(a,p,q,m))
     soln = util.crt(m,n)
     return soln 
 
@@ -75,3 +76,8 @@ if __name__=="__main__":
     soln = util.crt(m,n)
     print("Cube root: ",soln)
 
+if __name__ == "__main__":
+    a = 1433402
+    p = 3343
+    q = 2849
+    print("cuberoot({},{}) = {}".format(a,p,cuberoot(a,p)))
