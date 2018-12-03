@@ -52,12 +52,13 @@ class Gate(object):
                         new_table.append(dec)
                 count += 1
                 decrypt_table = new_table
-            print("-------------------------------")
-            print("decrypted table: \n")
-            print(decrypt_table)
-            print("-------------------------------")
+            #print("-------------------------------")
+            #print("decrypted table: \n")
+            #print(decrypt_table)
+            #print("-------------------------------")
 
             if len(decrypt_table) != 1:
+                print("decrypt_table: ",decrypt_table)
                 raise ValueError("decrypt_table should be length 1 after decrypting")
             self.output = decrypt_table[0]
 

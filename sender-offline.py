@@ -15,7 +15,7 @@ from util import *
 MAX_DATA_RECV = 999999
 # no of circuits
 # TODO: Increase n to practical value
-n = 5
+n = 100
 # global list containing all witness keys and commitments
 # for all N circuits generated
 KEYS = []
@@ -36,16 +36,10 @@ class ProxyThread(threading.Thread):
         
         # ---------- TO BE DONE JUST ONCE ----------
         
-        # send CONN_COUNT to proxy then write to file for ckt eval step
-        data = json.dumps({"CONN_COUNT":CONN_COUNT})
+        # send CONN_COUNT,num of circuits to proxy then write to file for ckt eval step
+        data = json.dumps({"CONN_COUNT":CONN_COUNT, "n":n})
         self.proxy_socket.send(data.encode())
 
-        # receive inputs from proxy - remaisn same throughout
-        data = self.proxy_socket.recv(MAX_DATA_RECV)
-        data = json.loads(data.decode())
-        inputs = data.get("inputs")
-        print("received inputs: {} from proxy".format(inputs))
-        
         # creation of RSA modulus n by Sender i.e n=p*q
         # TODO: check for bit size for RSA primes
         pub_key,priv_key = GM.GM_keygen(12)
@@ -57,11 +51,15 @@ class ProxyThread(threading.Thread):
             if util.gcd(C,N)==1:
                 break
 
-        data = json.dumps({"pub_key":pub_key, "C":C, "CONN_COUNT":CONN_COUNT})
-        self.proxy_socket.send(data.encode())
-        print("Sent public key {} , C {} , CONN_COUNT {} to proxy".format(pub_key,C,CONN_COUNT))
-        key_gen = {"pub_key":pub_key, "priv_key":priv_key}
+        # key_gen = {"pub_key":pub_key, "priv_key":priv_key}
        
+        # receive inputs from proxy - remaisn same throughout
+        # data = self.proxy_socket.recv(MAX_DATA_RECV)
+        # data = json.loads(data.decode())
+        with open('json/inputs.json','r') as f:
+            data = json.load(f)
+        inputs = data["inputs"]
+        print("received inputs: {} from proxy".format(inputs))
         
         # ---------- END ---------
 
@@ -81,11 +79,16 @@ class ProxyThread(threading.Thread):
                 try:
                     t0 = CIRCUITS[i].poss_inputs[j][0]
                     t1 = CIRCUITS[i].poss_inputs[j][1]
-                    #print("Tag0: {} Tag1: {}".format(t0,t1))
+                    if i<10:
+                        print("------------------------------------")
+                        print("i:{} Tag0: {} Tag1: {}".format(i,t0,t1))
+                        print("------------------------------------")
                     tags.append(t0)
                     tags.append(t1)
                 except:
-                    raise ValueError("Something went wrong with tag generation!")
+                    print("Something went wrong with tag generation!")
+                    print("Aborting...")
+                    os._exit(0)    
 
                 #print("---------------------------------")
                 
@@ -100,10 +103,11 @@ class ProxyThread(threading.Thread):
                 C1 = Double_Commitment(keys[1-a],tags[1-a],N).commitment
                 Comm.append([C0,C1])
 
-                if inputs[j] == 0:
-                    k.append(keys[a])
-                else:
-                    k.append(keys[1-a])
+                #if inputs[j] == 0:
+                #    k.append(keys[a])
+                #else:
+                #    k.append(keys[1-a])
+                k.append(keys[inputs[j]])
                 #print("-----------------------------------")
             
             global A_All, KEYS, K_all, Comm_All 
@@ -145,27 +149,30 @@ class ProxyThread(threading.Thread):
         """
         # ----------- END ----------
 
-        """        
-        data = json.dumps({"COMM":COMM})
-        self.proxy_socket.send(data.encode())
-        """
-
-        print("KEYS: ",KEYS)
-
         # receive indices of selected circuits
-        data = self.proxy_socket.recv(MAX_DATA_RECV)
-        data = json.loads(data.decode())
-        indices = data.get("indices")
+        # data = self.proxy_socket.recv(MAX_DATA_RECV)
+        # data = json.loads(data.decode())
+        with open('json/indices.json','r') as f:
+            data = json.load(f)
+        indices = data["indices"]
         print("indices received: ",indices)
 
         keys_selected = []
         for i in indices:
             keys_selected.append(KEYS[i])
 
-        data = json.dumps({"keys_selected":keys_selected})
-        self.proxy_socket.send(data.encode())
+        # data = json.dumps({"keys_selected":keys_selected})
+        data = {"keys_selected":keys_selected}
+        with open('json/keys_selected.json','w') as f:
+            json.dump(data, f)
+        # self.proxy_socket.send(data.encode())
         print("Sent seleted keys to proxy: ",keys_selected)
-
+        
+        print("Connect to proxy now....")
+        data = json.dumps({"pub_key":pub_key, "C":C, "CONN_COUNT":CONN_COUNT})
+        self.proxy_socket.send(data.encode())
+        print("Sent public key {} , C {} , CONN_COUNT {} to proxy".format(pub_key,C,CONN_COUNT))
+        
         with open("test/init.json","w") as f:
             data = {"pub_key":pub_key,"priv_key":priv_key,"CONN_COUNT":CONN_COUNT,"A":A_All,"indices":indices}
             json.dump(data,f)
@@ -185,22 +192,6 @@ if __name__ == "__main__":
 
 
     try: 
-        """
-        try:
-            CONN_COUNT = int(raw_input("Enter number of bidders: "))
-        except ValueError:
-            print("Please enter integer value")
-            exit(0)
-
-        on_input_gates = [[0, "AND", [0, 1]], 
-                    [1, "XOR", [2, 3]], 
-                    [2, "OR", [0,3]]]
-
-        mid_gates = [[3, "XOR", [0, 1]],
-                 [4, "OR", [1, 2]]]
-
-        output_gates = [[5, "OR", [3, 4]]]
-        """
         with open("test/circuit.json",'r') as f:
             data = json.load(f)
         data = json_util.byteify(data)
@@ -210,6 +201,16 @@ if __name__ == "__main__":
         mid_gates = data.get("mid_gates")
         inter_gates = data.get("inter_gates")
         output_gates = data.get("output_gates")
+        
+        on_input_gates = [[0, "AND", [0, 1]], 
+                    [1, "XOR", [2, 3]], 
+                    [2, "OR", [0,3]]]
+
+        mid_gates = [[3, "XOR", [0, 1]],
+                 [4, "OR", [1, 2]]]
+        
+        output_gates = [[5, "OR", [3, 4]],[6, "AND", [1, 4]]]
+       
         # remove old cut-and-choose.json, comm.json, keys.json
         if os.path.isfile("test/cut-and-choose.json"):
             os.remove("test/cut-and-choose.json")

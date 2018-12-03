@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function 
 
 import socket
 import os
@@ -11,6 +11,7 @@ from util import *
 import evaluator_test 
 import random
 import pickle 
+import sys 
 
 # variables
 BACKLOG = 50
@@ -18,7 +19,7 @@ MAX_DATA_RECV = 999999
 
 
 # TODO set n to practical value
-n = 5
+# n = 100
 
 class ClientThread(threading.Thread):
 
@@ -33,26 +34,32 @@ class ClientThread(threading.Thread):
         except socket.error as e:
             print("An error occurred : ",e)
             os._exit(0)
+        s.settimeout(9223372)
+
         # --------- TO BE DONE ONCE ---------
 
         # Receive CONN_COUNT from sender
         data = s.recv(MAX_DATA_RECV)
         data = json.loads(data.decode())
         CONN_COUNT = data.get("CONN_COUNT")
+        n = data.get("n")
 
         # send inputs for which commitments are needed
         inputs = []
         for i in range(0,CONN_COUNT):
             inputs.append(random.SystemRandom().getrandbits(1))
         print("Inputs to circuits: ",inputs)
-        data = json.dumps({"inputs":inputs})
-        s.send(data.encode())
+        # data = json.dumps({"inputs":inputs})
+        data = {"inputs":inputs}
+        with open('json/inputs.json','w') as f:
+            json.dump(data, f)
+        # s.send(data.encode())
         
-        data = s.recv(MAX_DATA_RECV)
-        data = json.loads(data.decode())
-        pub_key,C = data.get("pub_key"),data.get("C")
-        print("Received pub_key {} and C {} from sender".format(pub_key,C))
-        N = pub_key[1]
+        # data = s.recv(MAX_DATA_RECV)
+        # data = json.loads(data.decode())
+        # pub_key,C = data.get("pub_key"),data.get("C")
+        # print("Received pub_key {} and C {} from sender".format(pub_key,C))
+        # N = pub_key[1]
 
         # --------- END ------------
 
@@ -85,12 +92,23 @@ class ClientThread(threading.Thread):
         indices.sort()
         print("Sampled indices: ",indices)
 
-        data = json.dumps({"indices":indices})
-        s.send(data.encode())
+        # data = json.dumps({"indices":indices})
+        data = {"indices":indices}
+        with open('json/indices.json','w') as f:
+            json.dump(data, f)
+        #s.send(data.encode())
 
         data = s.recv(MAX_DATA_RECV)
         data = json.loads(data.decode())
-        keys_selected = data.get("keys_selected")
+        pub_key,C = data.get("pub_key"),data.get("C")
+        print("Received pub_key {} and C {} from sender".format(pub_key,C))
+        N = pub_key[1]
+        
+        #data = s.recv(MAX_DATA_RECV)
+        #data = json.loads(data.decode())
+        with open('json/keys_selected.json','r') as f:
+            data = json.load(f)
+        keys_selected = data["keys_selected"]
         print("selected keys received from sender: ",keys_selected)
 
 
@@ -113,18 +131,24 @@ class ClientThread(threading.Thread):
                     k_hash = hashlib.sha256(format(keys_selected[i][j], 'b')).hexdigest()
 
                     # print("Comm: {} , Key: {}, hash: {}".format(COMM[indices[i]],keys_selected[i],k_cube_hash))
-                    print("-----------------------------------")
+                    # print("-----------------------------------")
                     if k_cube_hash == Comm[indices[i]][j][inputs[j]][0]:
-                        print("Commitment opened successfully!")
+                        input_index = inputs[j]
+                    elif k_cube_hash == Comm[indices[i]][j][1-inputs[j]][0]:
+                        input_index = 1-inputs[j]
+                    else: 
+                        print("Unable to open commitment!")
+                        print("Aborting...")
+                        os._exit(0)
+                        print("-----------------------------------")
                     
                     # getting tags from commitments
-                    tag_int = int(k_hash, 16)^Comm[indices[i]][j][inputs[j]][1]
-                    print("-----------------------------------")
+                    tag_int = int(k_hash, 16)^Comm[indices[i]][j][input_index][1]
                     #tag_int = int(k_hash, 16)^COMM[indices[i]][j][1]
                     tag = gc_util.decode_str(tag_int)
                     TAGS.append(tag)
                 
-                print("count: {} indices[{}]={}".format(count,i,indices[i]))
+                # print("count: {} indices[{}]={}".format(count,i,indices[i]))
                 # load only circuits whose indices have been selected
                 # TODO: POSSIBLE BUG here
                 if count != indices[i]:
@@ -136,7 +160,7 @@ class ClientThread(threading.Thread):
                 data = json.loads(line)
                 count += 1
                 print("---------------------------------------")
-                print("Input to circuit {} = {}".format(i,TAGS))
+                print("Input to circuit {} = {}".format(indices[i],TAGS))
                 mycirc = evaluator_test.Circuit(data)
                 print(mycirc.fire(TAGS))
                 print("---------------------------------------")

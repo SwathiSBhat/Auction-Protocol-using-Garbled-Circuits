@@ -46,7 +46,8 @@ class Gate(object):
     gate_ref = {
         "AND": (lambda x, y: x and y),
         "XOR": (lambda x, y: x ^ y),
-        "OR": (lambda x, y: x or y)
+        "OR": (lambda x, y: x or y),
+        "NOT": (lambda x, y: x ^ 1)
     }
     
     # inputs = list of 2 items containing input wire IDs 
@@ -70,10 +71,14 @@ class Gate(object):
             f[i] = {}
             for j in (0, 1):
                 f[i][j] = Fernet(wires[i][j])
+                #print("gate_id: {} wires[{}][{}] = {}".format(g_id,i,j,wires[i][j]))
     
 
         for i in range(2):
             for j in range(2):
+                # print("gate_type: {} gate_res: {} i: {} j:{}".format(gate_type,self.gate_ref[gate_type](i,j),i,j))
+                #if gate_type == "NOT":
+                #    j = 1
                 if self.gate_ref[gate_type](i, j):
                     enc = f[0][i].encrypt(self.outputs[1])
                     self.table.append(f[1][j].encrypt(enc))
@@ -88,7 +93,7 @@ class Gate(object):
         # print("--------------------------------------")
 
 
-        shuffle(self.table) # TODO: make this crypto secure
+        shuffle(self.table)
         
 
     def grab_inputs(self):
@@ -204,12 +209,13 @@ class Circuit(object):
         for g in on_input_gates:
             # g[0] = gate_id , g[1] = gate_type , g[2] = array with input wire ids
             self.gates[g[0]] = OnInputGate(self, g[0], g[1], {0: g[2][0], 1: g[2][1]})
+        # TODO - IMPORTANT - check if changing order of initialization
+        # affects circuits
+        for g in inter_gates:
+            self.gates[g[0]] = InterGate(self, g[0], g[1], {0: g[2][0], 1: g[2][1]}, {0: g[3][0], 1: g[3][1]})
 
         for g in mid_gates:
             self.gates[g[0]] = MidGate(self, g[0], g[1], {0: g[2][0], 1: g[2][1]})
-
-        for g in inter_gates:
-            self.gates[g[0]] = InterGate(self, g[0], g[1], {0: g[2][0], 1: g[2][1]}, {0: g[3][0], 1: g[3][1]})
 
         self.output_gate_ids = []
         for g in output_gates:

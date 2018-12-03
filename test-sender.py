@@ -7,14 +7,14 @@ import random
 import hashlib 
 import json 
 from util import *
-import garbler  
+import garbler_test  
 import os 
 import pickle
 
 #variables
 MAX_DATA_RECV = 999999
 # number of gc to generate for cut-n-choose
-n = 5
+n = 100
 
 class ProxyThread(threading.Thread):
 
@@ -182,16 +182,21 @@ class ProxyThread(threading.Thread):
         print("-------------------------------------")
         self.proxy_socket.send(data.encode())
 
+        # synchronization with proxy
+        data = self.proxy_socket.recv(MAX_DATA_RECV)
+
         # 5. Sender receives x0 from proxy and computes x1=x0*C
         # y0 = x0^1/3 y1 = x1^1/3. Sender decrypts bs
         # if bs=0 transmit (z0,z1)=(y0k0,y1k1) to proxy else (y0k1,y1k0)
         # Send u to proxy 
         # TODO : Check if v is also to be different for each circuit
         v_list = []
-        data = self.proxy_socket.recv(MAX_DATA_RECV)
-        data = json.loads(data.decode())
+        # data = self.proxy_socket.recv(MAX_DATA_RECV)
+        # data = json.loads(data.decode())
         # X0 = list containing x0 for all circuits
-        X0,v = data.get("x0"),data.get("v")
+        with open('json/to_sender_1.json','r') as f:
+            data = json.load(f)
+        X0,v = data["x0"],data["v"]
         v_list.append(int(v))
         print("Received x0: {} v: {} from proxy".format(X0,v_list))
 
@@ -227,11 +232,17 @@ class ProxyThread(threading.Thread):
             c_list.append(c)
         
         
-        data = json.dumps({"Z":Z, "u":u_allstr, "c":c_list})
-        self.proxy_socket.send(data.encode())
+        # data = json.dumps({"Z":Z, "u":u_allstr, "c":c_list})
+        # self.proxy_socket.send(data.encode())
+        data =  {"Z":Z, "u":u_allstr, "c":c_list}
+        with open('json/to_proxy_2.json','w') as f:
+            json.dump(data, f)
         print("Sent u: {} Z: {} c:{} to proxy".format(u_allstr,Z,c_list))
         print("-------------------------------------")
        
+        # synchronization with proxy
+        data = "Synchronization"
+        self.proxy_socket.send(data)
 
 # *----- SENDER -----*
 if __name__ == "__main__":

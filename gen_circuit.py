@@ -41,6 +41,8 @@ def input_gates(N):
         ip = []
         ip.append(i)
         gate_type = get_gate_type()
+        # DEBUG
+        # gate_type = "OR"
         ip.append(gate_type)
         ip.append([j,j+1])
         inputs.append(ip)
@@ -53,6 +55,8 @@ def mid_gates(N):
         m = []
         m.append(i)
         gate_type = get_gate_type()
+        # DEBUG
+        # gate_type = "OR"
         m.append(gate_type)
         m.append([j,j+1])
         j += 2
@@ -64,6 +68,8 @@ def out_gates(N):
     op = []
     op.append(N-2)
     gate_type = get_gate_type()
+    # DEBUG
+    # gate_type = "OR"
     op.append(gate_type)
     op.append([N-4,N-3])
     out.append(op)

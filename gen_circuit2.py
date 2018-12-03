@@ -33,15 +33,6 @@ def input_gates(N):
     inputs.append([0,gate_type,[0,1]])
     if N == 2:
         return inputs 
-    """
-    for i in range(1,N-1):
-        ip = []
-        ip.append(i)
-        gate_type = get_gate_type()
-        ip.append(gate_type)
-        ip.append([i-1,i+1])
-        inputs.append(ip)
-    """
     return inputs
     
 

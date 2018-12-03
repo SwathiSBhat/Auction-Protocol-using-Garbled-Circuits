@@ -18,7 +18,7 @@ count = 0
 
 # n = number circuits to be evaluated = N/2 
 # where N = total number of circuits
-n = 5
+n = 100
 
 # stores all chosen tags received from sender
 TAGS = []
@@ -88,28 +88,47 @@ class ClientThread(threading.Thread):
         print("Received pub_key: {}, C: {},  CO:{} indices:{} from sender".format(pub_key,C,CO,indices_eval))
         print("-------------------------------------")
 
+        # send length of indices_eval to bidder
+        # data = json.dumps({"indices":len(indices_eval)})
+        # self.client_socket.send(data.encode())
+
         # 3. Chooser receives pub_key,C from proxy
-        data = json.dumps({"pub_key":pub_key, "C":C})
-        print("Sent pub_key: {},C: {} to chooser from proxy".format(pub_key,C))
+        data = json.dumps({"pub_key":pub_key, "C":C, "indices":len(indices_eval)})
+        print("Sent pub_key: {},C: {}, len(indices): {} to chooser from proxy".format(pub_key,C,len(indices_eval)))
         self.client_socket.send(data.encode())
         print("-------------------------------------")
         
-        # 4. Chooser sends (x0,v,x) to proxy. Proxy sends (x0,v) to sender
+        # synchronization with chooser
         data = self.client_socket.recv(MAX_DATA_RECV)
-        data = json.loads(data.decode())
-        X0,v,X,bp = data.get("x0"),data.get("v"),data.get("x"),data.get("bp")
-        print("Received x0: {}, v: {}, x:{}, bp:{} from sender".format(X0,v,X,bp))
+
+        # 4. Chooser sends (x0,v,x) to proxy. Proxy sends (x0,v) to sender
+        # data = self.client_socket.recv(MAX_DATA_RECV)
+        # data = json.loads(data.decode())
+        with open('json/to_proxy_1.json','r') as f:
+            data = json.load(f)
+        X0,v,X,bp = data["x0"], data["v"], data["x"], data["bp"]
+        print("Received x0: {}, v: {}, x:{}, bp:{} from bidder".format(X0,v,X,bp))
 
         # send (x0,v) to sender
-        data = json.dumps({"x0":X0, "v":v})
-        s.send(data.encode())
+        # data = json.dumps({"x0":X0, "v":v})
+        # s.send(data.encode())
+        data = {"x0": X0, "v":v}
+        with open('json/to_sender_1.json','w') as f:
+            json.dump(data, f)
         print("Sent x0:{}, v: {} to sender".format(X0,v))
 
-
-        # 5. Proxy receives (z0,z1),u from sender
+        # synchronization with sender
+        data = "Synchronization"
+        s.send(data)
+        
         data = s.recv(MAX_DATA_RECV)
-        data = json.loads(data.decode())
-        Z,u,c = data.get("Z"),data.get("u"),data.get("c")
+    
+        # 5. Proxy receives (z0,z1),u from sender
+        # data = s.recv(MAX_DATA_RECV)
+        # data = json.loads(data.decode())
+        with open('json/to_proxy_2.json','r') as f:
+            data = json.load(f)
+        Z,u,c = data["Z"],data["u"],data["c"]
         print("Received Z:{}, u:{}, c:{} from sender".format(Z,u,c))
 
 
@@ -128,6 +147,8 @@ class ClientThread(threading.Thread):
                 print("Verified sender tags for circuit {}".format(indices_eval[i]))
             else:
                 print("The sender isn't sending the right tags")
+                print("Aborting...")
+                os._exit(0)
             print("-------------------------------------")
 
             # FINAL : Verify c published by sender
@@ -153,10 +174,15 @@ class ClientThread(threading.Thread):
         
             k_cube = pow(k,3,N)
             k_cube_hash = hashlib.sha256(format(k_cube,'b')).hexdigest()
-            if k_cube_hash == comm[i][0][0]:
-                print("Opened C0")
-            elif k_cube_hash == comm[i][1][0]:
-                print("Opened C1")
+            # if k_cube_hash == comm[i][0][0]:
+            #    print("Opened C0")
+            # elif k_cube_hash == comm[i][1][0]:
+            #    print("Opened C1")
+
+            if k_cube_hash != comm[i][0][0] and k_cube_hash != comm[i][1][0]:
+                print("Unable to open commitment!")
+                print("Aborting...")
+                os._exit(0)
 
             if int(c[i]) == 0:
                 tag_int = int(k_hash,16)^comm[i][0][1]
@@ -166,7 +192,7 @@ class ClientThread(threading.Thread):
             # print("c: {}, k:{} ".format(c[i],k))
             # print("tag_int: ",tag_int) 
 
-            print("-------------------------------------")
+            # print("-------------------------------------")
         
             tag = gc_util.decode_str(tag_int)
             lock.acquire()
@@ -179,9 +205,9 @@ class ClientThread(threading.Thread):
     
             # print("Inputs to circuit number {}: {}".format(indices[i],TAGS))
         
-        print("Bidder{} inputs to all circuits: {}".format(CONN_COUNT,TAGS))
+        # print("Bidder{} inputs to all circuits: {}".format(CONN_COUNT,TAGS))
         
-        print("-------------------------------------")
+        #print("-------------------------------------")
         
         """
         if CONN_COUNT == count:        
@@ -190,11 +216,18 @@ class ClientThread(threading.Thread):
             TAGS_ALL.append(TAGS)
             lock.release()
         """
-
         # TODO: Don't send entire TAGS just send corresponding ones
-        data = json.dumps({"tag_all":TAGS})    
-        self.client_socket.send(data.encode())
-        print("Sent tags for all ckts to bidder: {}".format(TAGS))
+        # data = json.dumps({"tag_all":TAGS})    
+        # self.client_socket.send(data.encode())
+        data = {"tag_all": TAGS}
+        with open('json/to_bidder_tags.json','w') as f:
+            json.dump(data, f)
+        # print("Sent tags for all ckts to bidder: {}".format(TAGS))
+        print("Sent tags to bidder")
+
+        # synchronization with chooser
+        data = "Synchronization"
+        self.client_socket.send(data)
 
         # ------- EVALUATOR -------- 
         if count == CONN_COUNT:
@@ -228,16 +261,18 @@ class ClientThread(threading.Thread):
                 for keys in OUTPUTS[i]:
                     if keys not in ele:
                         ele.append(keys)
-            print("Distinct outputs: ",ele)
+            print("Output gates: ",ele)
             
             for i in range(0,len(ele)):
                 count_maj = []
-                for l in range(0,n):
-                    count_maj.append(OUTPUTS[l+j][ele[i]])
+                for l in range(0,(n+1)/2):
+                    # print("i: {} l:{}".format(i,l))
+                    # print("ele[{}] = {} l:{} j:{} OUTPUTS[{}][ele[{}]]= {}".format(i,ele[i],l,j,l,i,OUTPUTS[l][ele[i]]))
+                    count_maj.append(OUTPUTS[l][ele[i]])
                 counter = Counter(count_maj)
-                print("All outputs for gate[{}] : {}".format(ele[i],counter))
+                print("Output for gate[{}] : {}".format(ele[i],counter))
                 value, maj_count = counter.most_common()[0]
-                if maj_count > n/2:
+                if maj_count > n/4:
                     print("gate[{}] output = {}".format(ele[i],value))
                 else:
                     print("No majority output - output withheld")
@@ -254,6 +289,7 @@ class ClientThread(threading.Thread):
 
         # TODO : If proxy quits, quit client and sender 
         # TODO : Figure out where to close client socket
+
 
 if __name__ == "__main__":
     try:

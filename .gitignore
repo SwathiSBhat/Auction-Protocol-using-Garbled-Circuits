@@ -2,9 +2,12 @@ __pycache__
 *.pyc
 .DS_Store
 data/
+json/
 *.json
 *.py.swp
 *.data
 callgrind.*
+*.txt
+*.html
 cut-and-choose.json
 garbled_circuit.json

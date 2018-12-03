@@ -10,13 +10,13 @@ from util import *
 MAX_DATA_RECV = 999999
 
 # TODO : Send indices
-indices = [1,3,4]
+# indices = [1,3,4]
 
 """
 VPOT Protocol
 """
 def vpot_client():
-    b = int(raw_input("Enter your bit(0/1): "))
+    b = int(raw_input("Enter your bid(0/1): "))
 
     # DEBUG
     #b = 1
@@ -27,7 +27,8 @@ def vpot_client():
     data = json.loads(data.decode())
     pub_key,C = data.get("pub_key"),data.get("C")
     N = pub_key[1]
-    print("Received pub_key: {} , C: {} from proxy".format(pub_key,C))
+    indices = data.get("indices")
+    print("Received pub_key: {} , C: {} indices length: {} from proxy".format(pub_key,C,indices))
     print("---------------------------------------------")
 
     bs = random.SystemRandom().getrandbits(1)
@@ -43,7 +44,8 @@ def vpot_client():
     X0 = []
     X = []
 
-    for i in range(0,len(indices)):
+    # NOTE - indices = length of indices
+    for i in range(0,indices):
         while True:
             x = random.SystemRandom().randint(1,N-1)
             if util.gcd(x,N)==1:
@@ -61,39 +63,33 @@ def vpot_client():
 
     # 4. Chooser sends (x0,v,x) to proxy. Proxy sends to sender: (x0,v)
     v_str = ''.join(str(s) for s in v)
-    data = json.dumps({"x0":X0, "v":v_str, "x":X, "bp":bp})
+    # data = json.dumps({"x0":X0, "v":v_str, "x":X, "bp":bp})
+    # client.send(data.encode())
+    data = {"x0":X0, "v":v_str, "x":X, "bp":bp}
+    with open('json/to_proxy_1.json','w') as f:
+        json.dump(data, f)
     print("Sent x0: {},v: {},x: {}, bp: {} to proxy".format(X0,v,X,bp))
-    client.send(data.encode())
+
+    # synchronization with proxy
+    data = "Synchronization"
+    client.send(data)
+    
+    data = client.recv(MAX_DATA_RECV)
 
     # Receive tag_int from proxy
-    data = client.recv(MAX_DATA_RECV)
-    data = json.loads(data.decode())
-    tags = data.get("tag_all")
-    print("Received tag_all: {} from proxy".format(tags))
+    # data = client.recv(MAX_DATA_RECV)
+    # data = json.loads(data.decode())
+    with open("json/to_bidder_tags.json",'r') as f:
+        data = json.load(f)
+    tags = data["tag_all"]
+    # print("Received tag_all: {} from proxy".format(tags))
+    print("Received tags for all circuits from proxy")
 
     print("Client closed")
     client.close()
 
 """
 end of VPOT
-"""
-
-"""
-# TODO: check if 2048 is enough
-while True:
-    in_data = client.recv(2048)
-    print("Recv from proxy-server: ",in_data.decode())
-    if in_data.decode() == "quit":
-        print("Quitting...")
-        break
-    try: 
-        out_data = raw_input("Enter data to be sent to proxy: ")
-        client.send(bytes(out_data))
-        if out_data == "quit":
-            break
-    except KeyboardInterrupt:
-        client.send(bytes("quit"))
-        break
 """
 
 if __name__ == "__main__":
