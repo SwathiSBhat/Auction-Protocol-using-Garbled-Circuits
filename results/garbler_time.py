@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : garbler_time.py
+# Author            : Swathi S Bhat
+# Date              : 12.12.2018
+# Last Modified Date: 12.12.2018
+# Last Modified By  : Swathi S Bhat
 import plotly.plotly as py
 import plotly.graph_objs as go
 import plotly 
@@ -188,6 +195,55 @@ plotly.offline.plot(fig, filename='results/gate_type',auto_open=True)
 # prime lengths:
 # OR gate, size of circuit - 128 gates
 # profiling vpot time
+# clock type = wall
 prime_len = [12, 20, 50, 100, 500, 1000]
-ttot = [1.395500, 1.451839, 1.395540, 1.417696, 1.401800, 1.539462]
+prime_ttot = [9.731557, 9.651967, 10.14054, 12.01229, 91.35291, 1012.318]
+prime_tavg = [0.076626, 0.076000, 0.079847, 0.094585, 0.719314, 7.971009]
+
+trace9 = go.Scatter(
+        x = prime_len,
+        y = prime_ttot,
+        mode = 'lines+markers',
+        text = prime_len,
+        textposition = 'top center',
+        name = "total time",
+        line = dict(
+            color = ('rgb(22, 96, 167)'),
+            width = 4
+            )
+        )
+"""
+data = [ trace9 ]
+# Graph for ttot for different prime lengths of public key
+layout = dict(title = 'Execution time for varying length primes',
+              xaxis = dict(title = 'Prime length (bits)'),
+              yaxis = dict(title = 'Wall time - ttot (sec)')
+        )
+
+fig = go.Figure(data=data, layout=layout)
+plotly.offline.plot(fig, filename='results/prime_len_ttot',auto_open=True)
+"""
+
+trace10 = go.Scatter(
+        x = prime_len,
+        y = prime_tavg,
+        mode = 'lines+markers',
+        text = prime_len,
+        textposition = 'top center',
+        name = "total time",
+        line = dict(
+            color = ('rgb(22, 96, 167)'),
+            width = 4
+            )
+        )
+
+data = [ trace10 ]
+# Graph for tavg for different prime lengths of public key
+layout = dict(title = 'Execution time for varying length primes',
+              xaxis = dict(title = 'Prime length (bits)'),
+              yaxis = dict(title = 'Wall time - tavg (sec)')
+        )
+
+fig = go.Figure(data=data, layout=layout)
+plotly.offline.plot(fig, filename='results/prime_len_tavg',auto_open=True)
 

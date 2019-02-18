@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : evaluator_test.py
+# Author            : Swathi S Bhat
+# Date              : 11.12.2018
+# Last Modified Date: 13.12.2018
+# Last Modified By  : Swathi S Bhat
 from __future__ import print_function
 
 from cryptography.fernet import Fernet
@@ -11,6 +18,9 @@ class Gate(object):
         self.g_id = g_id
         self.flag = flag 
         self.input_type = input_type 
+        #print("--------------------------------")
+        #print("gate_json - \n",gate_json)
+        #print("--------------------------------")
         self.inputs = {0: gate_json["inputs"]["0"],
                        1: gate_json["inputs"]["1"]}
         self.table = [t for t in gate_json["table"]]
@@ -52,11 +62,12 @@ class Gate(object):
                         new_table.append(dec)
                 count += 1
                 decrypt_table = new_table
-            #print("-------------------------------")
-            #print("decrypted table: \n")
-            #print(decrypt_table)
-            #print("-------------------------------")
-
+            """
+            print("-------------------------------")
+            print("decrypted table: \n")
+            print(decrypt_table)
+            print("-------------------------------")
+            """
             if len(decrypt_table) != 1:
                 print("decrypt_table: ",decrypt_table)
                 raise ValueError("decrypt_table should be length 1 after decrypting")
@@ -75,6 +86,8 @@ class OnInputGate(Gate):
         Gate.__init__(self, circuit, g_id, gate_json, flag, input_type)
 
     def grab_inputs(self):
+        #print("g_id: {}".format(self.g_id)) 
+        #print("self.circuit.inputs: {} self.inputs:{}".format(self.circuit.inputs, self.inputs))
         return {0: self.circuit.inputs[self.inputs[0]],
                 1: self.circuit.inputs[self.inputs[1]]}
 

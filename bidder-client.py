@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : bidder-client.py
+# Author            : Swathi S Bhat
+# Date              : 07.12.2018
+# Last Modified Date: 09.12.2018
+# Last Modified By  : Swathi S Bhat
 from __future__ import print_function
 
 import socket
@@ -5,6 +12,7 @@ import json
 import threading
 from util import *
 import random
+import os 
 
 # variables
 MAX_DATA_RECV = 999999
@@ -17,15 +25,6 @@ VPOT Protocol
 
 
 def vpot_client():
-    try:
-        # TODO - check for 0/1 only
-        # b = int(raw_input("Enter your bit(0/1): "))
-        # TODO : Check for correct input length
-        # TODO : allow bid to be entered as int
-        b = raw_input("Enter bid in binary: ")
-    except ValueError:
-        print("ValueError - Please enter a bit (0/1)")
-        exit(0)
 
     # 3. Chooser receives N,C from proxy and splits b into b = bs ^ bp
     # Select x in Zn*. If bp=0 x0=x^3 else x0=x^3/C. Also compute v=E[bs]
@@ -33,13 +32,27 @@ def vpot_client():
     data = json.loads(data.decode())
     pub_key, C = data.get("pub_key"), data.get("C")
     N = pub_key[1]
+    ip_len = data.get("ip_len")
+
+    while True:
+        try:
+            b = int(raw_input("Enter bid: "))
+            if b <= (pow(2, ip_len) - 1):
+                b_bin = util.int_to_bin(b, ip_len)
+                break 
+            else:
+                print("Bid value greater than input length. Try again.")
+        except ValueError:
+            print("ValueError - Invalid bid value")
+            exit(0)
+    
     print("Received pub_key: {} , C: {} from proxy".format(pub_key, C))
     print("-------------------------------------------")
 
     bid = []
     bid_s = []
     bid_p = []
-    for i in b:
+    for i in b_bin:
         bs = random.SystemRandom().getrandbits(1)
         bp = int(i) ^ bs
         bid.append(int(i))
@@ -48,8 +61,6 @@ def vpot_client():
 
     print("bs:{}, bp:{}, b:{} ".format(bid_s, bid_p, bid))
     print("-------------------------------------------")
-    # ip_len = length of input
-    ip_len = len(bid)
 
     X = []
     X0 = []
@@ -105,7 +116,11 @@ if __name__ == "__main__":
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             client.connect((SERVER, PORT))
-            vpot_client()
+            try:
+                vpot_client()
+            except ValueError:
+                print("JSON Error")
+                os._exit(0)
         except socket.error as e:
             print("An error occurred : ", e)
             exit(0)

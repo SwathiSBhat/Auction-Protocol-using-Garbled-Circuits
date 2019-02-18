@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : GM.py
+# Author            : Swathi S Bhat
+# Date              : 13.12.2018
+# Last Modified Date: 13.12.2018
+# Last Modified By  : Swathi S Bhat
 from __future__ import print_function
 
 import sys
@@ -25,7 +32,7 @@ def GM_keygen(bit_size):
     while(p==q):
         p = util.generate_rsa_prime(bit_size)
 
-    print("P: ",p," q: ",q)
+    #print("P: ",p," q: ",q)
     N = p*q
 
     """

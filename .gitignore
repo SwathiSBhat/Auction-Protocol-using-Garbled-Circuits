@@ -3,11 +3,16 @@ __pycache__
 .DS_Store
 data/
 json/
+gui/
 *.json
 *.py.swp
 *.data
 callgrind.*
 *.txt
+test.py
 *.html
+results/*.png
+results/*.svg
+results/stats/
 cut-and-choose.json
 garbled_circuit.json

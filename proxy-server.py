@@ -1,16 +1,23 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : proxy-server.py
+# Author            : Swathi S Bhat
+# Date              : 07.12.2018
+# Last Modified Date: 13.12.2018
+# Last Modified By  : Swathi S Bhat
 from __future__ import print_function
 
 import socket
 import os
 import json
+from halo import Halo
+from termcolor import colored 
 import thread
 import threading
 import hashlib
 from util import *
 import evaluator_test
 import yappi
-from datetime import datetime
-# import pickle
 
 # variables
 BACKLOG = 1000
@@ -59,7 +66,7 @@ class ClientThread(threading.Thread):
         global CONN_COUNT
         CONN_COUNT += 1
 
-        print("Connection number: ", CONN_COUNT, "  made at: ", clientaddr)
+        print(colored("Connection number: {}  made at: {}","white").format(CONN_COUNT,clientaddr))
         print("-------------------------------------")
         lock.release()
 
@@ -100,11 +107,12 @@ class ClientThread(threading.Thread):
             pub_key, C, comm, CO))
         print("-------------------------------------")
 
-        yappi.start()
+        # yappi.set_clock_type('wall')
+        # yappi.start()
 
         # 3. Chooser receives pub_key,C from proxy
-        data = json.dumps({"pub_key": pub_key, "C": C})
-        print("Sent public_key: {},C: {} to chooser from proxy".format(pub_key, C))
+        data = json.dumps({"pub_key": pub_key, "C": C, "ip_len":ip_len})
+        print("Sent ip_len: {} public_key: {},C: {} to chooser from proxy".format(ip_len, pub_key, C))
         self.client_socket.send(data.encode())
         print("-------------------------------------")
 
@@ -152,10 +160,13 @@ class ClientThread(threading.Thread):
 
             # print("hash_z0 = {} hash_z1 = {} comm[i][1][0] : {} comm[i][0][0]:{}".format(hash_z0,hash_z1,comm[i][1][0],comm[i][0][0]))
             if (hash_z0 == comm[i][0][0] or hash_z0 == comm[i][1][0]) and (hash_z1 == comm[i][0][0] or hash_z1 == comm[i][1][0]):
-                print("Verified sender tags")
+                print(colored("Verified sender tags","white"))
             else:
                 print("The sender isn't sending the right tags")
                 print("Aborting...")
+                spinner = Halo(text="The sender isn't sending the right tags\nAborting.",spinner="dots")
+                spinner.start()
+                spinner.fail()
                 os._exit(0)
             print("-------------------------------------")
 
@@ -180,11 +191,11 @@ class ClientThread(threading.Thread):
 
             if k_cube_hash == comm[i][0][0]:
                 comm_val = comm[i][0][1]
-                print("Opened C0")
+                print("Opened Commitment0")
                 # print("COMM: {} - {}".format(comm[i][0][0],comm[i][0][1]))
             elif k_cube_hash == comm[i][1][0]:
                 comm_val = comm[i][1][1]
-                print("Opened C1")
+                print("Opened Commitment1")
                 # print("COMM: {} - {}".format(comm[i][1][0],comm[i][1][1]))
 
             if c[i] == 0:
@@ -235,16 +246,34 @@ class ClientThread(threading.Thread):
                 #     pickle.dump(TAGS,f)
 
                 # yappi.start()
-                print(mycirc.fire(TAGS))
+                output_dict = mycirc.fire(TAGS)
+                print(colored("Output: {}","white").format(output_dict))
+                output_list = []
+                for key in sorted(output_dict):
+                    val = int(output_dict[key].strip('[]'))
+                    output_list.append(val)
+                # print("Output list: ",output_list)
+                # getting max only for auction circuit
+                if len(output_list) > 1:
+                    get_max.get_max(output_list, count)
+
                 # func_stats = yappi.get_func_stats()
                 # func_stats = yappi.get_func_stats().print_all()
-                # func_stats.save('callgrind.out.' + datetime.now().isoformat(), 'CALLGRIND')
+                # OUT_FILE = 'results/stats/out'
+                """
+                for stat_type in ['pstat', 'callgrind', 'ystat']:
+                    print('writing {}.{}'.format(OUT_FILE, stat_type))
+                    func_stats.save('{}.{}'.format(OUT_FILE, stat_type), type=stat_type)
+                """
                 # print("---------------------")
                 # print_stat(func_stats, sys.stdout, limit=10)
-                yappi.stop()
-                yappi.clear_stats()
+                # yappi.stop()
+                # yappi.clear_stats()
                 server.close()
-                print("Shutting down...")
+                spinner = Halo(text="Shutting down...",spinner="dots")
+                spinner.start()
+                #print("Shutting down...")
+                spinner.fail()
                 os._exit(0)
 
             print("-------------------------------------")
@@ -255,7 +284,7 @@ class ClientThread(threading.Thread):
 
         print("-------------------------------------")
 
-        print("Server at {} disconnected".format(clientaddr))
+        print(colored("Server at {} disconnected","white").format(clientaddr))
         print("-------------------------------------")
         s.close()
 
@@ -279,7 +308,7 @@ if __name__ == "__main__":
         # server.bind(('',0)
         server.bind(('127.0.0.1', 50001))
 
-        print("Proxy server started at ", server.getsockname())
+        print(colored("Proxy server started at {}","white").format(server.getsockname()))
 
         while True: 
             try:

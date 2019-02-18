@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : test-sender.py
+# Author            : Swathi S Bhat
+# Date              : 12.12.2018
+# Last Modified Date: 12.12.2018
+# Last Modified By  : Swathi S Bhat
 from __future__ import print_function
 
 import socket
@@ -13,6 +20,7 @@ import pickle
 
 #variables
 MAX_DATA_RECV = 999999
+IS_NOT_GATE = 0
 # number of gc to generate for cut-n-choose
 n = 100
 
@@ -251,6 +259,14 @@ if __name__ == "__main__":
             data = json.load(f)
 
         CONN_COUNT = data.get("num_inputs")
+        IS_NOT_GATE = data.get("IS_NOT_GATE")
+        ip_len = data.get("ip_len")
+        
+        if ip_len > 1:
+            print("Cut and choose works only for input length = 1 bit")
+            print("Aborting...")
+            exit(0)
+        
         print("-----------------------")
         print("CONN_COUNT: ",CONN_COUNT)
         print("-----------------------")

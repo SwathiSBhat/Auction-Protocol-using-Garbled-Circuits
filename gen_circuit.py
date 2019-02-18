@@ -1,7 +1,15 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : gen_circuit.py
+# Author            : Swathi S Bhat
+# Date              : 07.12.2018
+# Last Modified Date: 09.12.2018
+# Last Modified By  : Swathi S Bhat
 from __future__ import print_function
 
 import math
 import json 
+import os 
 from util import * 
 from random import SystemRandom 
 """
@@ -17,6 +25,7 @@ in a tree fashion:
 ---||
 
 """
+
 
 
 def Log2(x):
@@ -87,11 +96,16 @@ if __name__ == "__main__":
                 break
         except ValueError:
             continue 
-    
+   
     if N == 1: 
         raise ValueError("Invalid input")
         exit(0)
-    
+   
+    ip_len = int(raw_input("Enter length of bid: "))
+    if N % ip_len != 0:
+        print("Inputs can't be distributed among bidders!")
+        exit(0)
+
     on_input_gates = input_gates(N)
     print("Input gates: \n",on_input_gates)
     on_mid_gates = mid_gates(N)
@@ -106,6 +120,7 @@ if __name__ == "__main__":
     # write to json
     j = {
             "num_inputs": N,
+            "ip_len": ip_len,
             "on_input_gates": on_input_gates,
             "mid_gates": on_mid_gates,
             "inter_gates": on_inter_gates,

@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : test-proxy.py
+# Author            : Swathi S Bhat
+# Date              : 12.12.2018
+# Last Modified Date: 12.12.2018
+# Last Modified By  : Swathi S Bhat
 from __future__ import print_function
 
 import socket
@@ -10,6 +17,7 @@ import hashlib
 from util import *
 import evaluator_test
 from collections import Counter
+import pickle 
 
 # variables
 BACKLOG = 50
@@ -228,6 +236,11 @@ class ClientThread(threading.Thread):
         # synchronization with chooser
         data = "Synchronization"
         self.client_socket.send(data)
+        
+        # load not_tags
+        if os.path.isfile("data/not_tag.data"):
+            with open("data/not_tag.data","rb") as f:
+                Not_Tag = pickle.load(f)
 
         # ------- EVALUATOR -------- 
         if count == CONN_COUNT:
@@ -244,6 +257,8 @@ class ClientThread(threading.Thread):
                     line = f.readline()
                     data = json.loads(line)
                     cktcount += 1
+                    if 'Not_Tag' in locals():
+                        TAGS.append(Not_Tag[indices_eval[i]])
                     mycirc = evaluator_test.Circuit(data)
                     output = mycirc.fire(TAGS[i])
                     OUTPUTS.append(output)

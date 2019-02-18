@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : gen_circuit2.py
+# Author            : Swathi S Bhat
+# Date              : 07.12.2018
+# Last Modified Date: 07.12.2018
+# Last Modified By  : Swathi S Bhat
 from __future__ import print_function
 
 import json 
@@ -61,11 +68,16 @@ if __name__ == "__main__":
     
     while True:
         try:
-            N = int(raw_input("Enter number of bidders: "))
+            N = int(raw_input("Enter number of inputs: "))
             break 
         except ValueError:
             print("Please enter valid input")
             continue
+    
+    ip_len = int(raw_input("Enter input length of bids: "))
+    if N % ip_len != 0:
+        print("Inputs can't be distributed among bidders!")
+        exit(0)
 
     on_input_gates = input_gates(N)
     print("Input gates: ",on_input_gates)
@@ -82,6 +94,7 @@ if __name__ == "__main__":
     # write to json
     j = {
             "num_inputs": N,
+            "ip_len": ip_len,
             "on_input_gates": on_input_gates,
             "mid_gates": on_mid_gates,
             "inter_gates": on_inter_gates,

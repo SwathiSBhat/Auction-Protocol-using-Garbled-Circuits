@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : sender-server.py
+# Author            : Swathi S Bhat
+# Date              : 07.12.2018
+# Last Modified Date: 13.12.2018
+# Last Modified By  : Swathi S Bhat
 from __future__ import print_function
 
 import socket
@@ -8,9 +15,9 @@ import hashlib
 import json
 from util import *
 import garbler_test
-# import pickle
 import os
-# import sys
+from halo import Halo
+from termcolor import colored 
 
 # variables
 MAX_DATA_RECV = 999999
@@ -25,7 +32,7 @@ class ProxyThread(threading.Thread):
     def __init__(self, proxyaddr, proxysock):
         threading.Thread.__init__(self)
         self.proxy_socket = proxysock
-        print("New proxy connection made at: ", proxyaddr)
+        print(colored("New proxy connection made at: {}","white").format(proxyaddr))
 
     def run(self):
         """
@@ -57,7 +64,7 @@ class ProxyThread(threading.Thread):
         data = json.loads(data.decode())
         # connection count received from proxy
         count = data.get("conn_count")
-        print("Received CONNECTION {} from proxy", count)
+        print(colored("Received CONNECTION {} from proxy","white").format(count))
 
         # 1. Sender chooses tags t0,t1 and an integer C
         for i in range(ip_len):
@@ -170,7 +177,7 @@ class ProxyThread(threading.Thread):
         if count == CONN_COUNT and IS_NOT_GATE == 1:
             data = json.dumps({"z0": Z0, "z1": Z1, "u": U_str,
                                "c": c_list, "not_tag": not_tag})
-            print("Sent not_tag : {} to proxy".format(not_tag))
+            #print("Sent not_tag : {} to proxy".format(not_tag))
         else:
             data = json.dumps({"z0": Z0, "z1": Z1, "u": U_str, "c": c_list})
         self.proxy_socket.send(data.encode())
@@ -190,19 +197,21 @@ with open("test/circuit.json", 'r') as f:
 data = json_util.byteify(data)
 
 # ip_len = input length of each bid
-ip_len = int(raw_input("Enter input length of bids: "))
+ip_len = data.get("ip_len")
 num_inputs = data.get("num_inputs")
 # if using example circuit 1 or circuit 3
 # num_inputs = 4
 # if using example circuit 2
 # num_inputs = 5
 
+"""
 if num_inputs % ip_len != 0:
     print("Inputs can't be distributed among bidders!")
     exit(0)
 else:
-    CONN_COUNT = num_inputs/ip_len
-    print("CONN_COUNT: ", CONN_COUNT)
+"""
+CONN_COUNT = num_inputs/ip_len
+print(colored("CONN_COUNT: ","white"), CONN_COUNT)
 
 on_input_gates = data.get("on_input_gates")
 mid_gates = data.get("mid_gates")
@@ -271,23 +280,13 @@ else:
     print("num_inputs : ", num_inputs)
     mycirc = garbler_test.Circuit(
         num_inputs, on_input_gates, mid_gates, inter_gates, output_gates)
-print("Possible input tags: ", mycirc.poss_inputs)
+#print("Possible input tags: ", mycirc.poss_inputs)
 print("----------------------------------------")
 
 # garbled input corresponding to 1 in NOT gate
 if IS_NOT_GATE:
     not_tag = mycirc.poss_inputs[-1][1]
 
-
-# DEBUG
-# with open('poss_ips.txt','w') as f:
-#    pickle.dump(mycirc.poss_inputs,f)
-
-"""
-if mycirc.num_inputs != num_inputs:
-    raise ValueError("Number of inputs to circuit and bidders don't match!")
-    os._exit(0)    
-"""
 mycirc.prep_for_json()
 
 sender_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -298,7 +297,7 @@ sender_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sender_server.bind(('127.0.0.1', 50000))
 
 # allow sender server to spawn several threads when proxy connects with new client
-print("Sender server started at : ", sender_server.getsockname())
+print(colored("Sender server started at {}: ","white").format(sender_server.getsockname()))
 
 while True:
     try:
@@ -307,5 +306,8 @@ while True:
         newthread = ProxyThread(proxyaddr, proxysock)
         newthread.start()
     except KeyboardInterrupt:
-        print("Shutting down....")
+        spinner = Halo(text="Keyboard Interrupt. Shutting down", spinner='dots')
+        spinner.start()
+        #print("Shutting down....")
+        spinner.fail()
         exit(0)

@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : proxy-offline.py
+# Author            : Swathi S Bhat
+# Date              : 11.12.2018
+# Last Modified Date: 13.12.2018
+# Last Modified By  : Swathi S Bhat
 from __future__ import print_function 
 
 import socket
@@ -12,6 +19,7 @@ import evaluator_test
 import random
 import pickle 
 import sys 
+from termcolor import colored
 
 # variables
 BACKLOG = 50
@@ -37,13 +45,14 @@ class ClientThread(threading.Thread):
         s.settimeout(9223372)
 
         # --------- TO BE DONE ONCE ---------
-
+        """
         # Receive CONN_COUNT from sender
         data = s.recv(MAX_DATA_RECV)
         data = json.loads(data.decode())
         CONN_COUNT = data.get("CONN_COUNT")
         n = data.get("n")
-
+        """
+        """
         # send inputs for which commitments are needed
         inputs = []
         for i in range(0,CONN_COUNT):
@@ -54,7 +63,8 @@ class ClientThread(threading.Thread):
         with open('json/inputs.json','w') as f:
             json.dump(data, f)
         # s.send(data.encode())
-        
+        """
+
         # data = s.recv(MAX_DATA_RECV)
         # data = json.loads(data.decode())
         # pub_key,C = data.get("pub_key"),data.get("C")
@@ -83,7 +93,7 @@ class ClientThread(threading.Thread):
         print("--------------------------------")
         """
         # ---------- END OF DEBUG ---------
-
+        """
         # TODO: change sampling range to number of circuits
         # TODO: Send number of circuits = n from sender to proxy
         num_of_indices = n/2
@@ -91,12 +101,14 @@ class ClientThread(threading.Thread):
         indices = random.SystemRandom().sample(range(0,n), num_of_indices)
         indices.sort()
         print("Sampled indices: ",indices)
-
+        """
+        """
         # data = json.dumps({"indices":indices})
         data = {"indices":indices}
         with open('json/indices.json','w') as f:
             json.dump(data, f)
         #s.send(data.encode())
+        """
 
         data = s.recv(MAX_DATA_RECV)
         data = json.loads(data.decode())
@@ -113,10 +125,22 @@ class ClientThread(threading.Thread):
 
 
         print("----------------------------")
-
+        
         with open("data/comm.data","rb") as f:
             Comm = pickle.load(f)
+
+        if os.path.isfile("data/not_tag.data"):
+            with open("data/not_tag.data","rb") as f:
+                Not_Tag = pickle.load(f)
         
+        with open('json/indices.json','r') as f:
+            data = json.load(f)
+        indices = data['indices']
+
+        with open('json/inputs.json','r') as f:
+            data = json.load(f)
+        inputs = data["inputs"]
+
         # opening and verifying commitments
         # i = index of selected circuits
         # j = iterates through number of inputs in every circuit
@@ -148,6 +172,8 @@ class ClientThread(threading.Thread):
                     tag = gc_util.decode_str(tag_int)
                     TAGS.append(tag)
                 
+                if 'Not_Tag' in locals():
+                    TAGS.append(Not_Tag[indices[i]])
                 # print("count: {} indices[{}]={}".format(count,i,indices[i]))
                 # load only circuits whose indices have been selected
                 # TODO: POSSIBLE BUG here
@@ -159,11 +185,11 @@ class ClientThread(threading.Thread):
                 line = f.readline()
                 data = json.loads(line)
                 count += 1
-                print("---------------------------------------")
+                print(colored("-------------------------------------------------","white"))
                 print("Input to circuit {} = {}".format(indices[i],TAGS))
                 mycirc = evaluator_test.Circuit(data)
                 print(mycirc.fire(TAGS))
-                print("---------------------------------------")
+                print(colored("-------------------------------------------------","white"))
 
 if __name__ == "__main__":
 

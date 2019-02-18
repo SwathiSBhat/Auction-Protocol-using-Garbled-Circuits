@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : auction_circuit.py
+# Author            : Swathi S Bhat
+# Date              : 07.12.2018
+# Last Modified Date: 07.12.2018
+# Last Modified By  : Swathi S Bhat
 from __future__ import print_function
 
 import os 
@@ -23,7 +30,7 @@ def output_gate(output_gates, gate_num):
 
 if __name__ == "__main__":
     num_bidders = int(raw_input("Enter number of bidders: "))
-    ip_len = int(raw_input("Enter input bid length: "))
+    ip_len = int(raw_input("Enter length of bid: "))
     # n = index of input to NOT gate i.e last index
     n = num_bidders*ip_len
     if ip_len != 2:
@@ -71,6 +78,7 @@ if __name__ == "__main__":
     # write to json
     j = {
             "num_inputs": N,
+            "ip_len": ip_len,
             "on_input_gates": input_gates,
             "mid_gates": mid_gates,
             "inter_gates": inter_gates,

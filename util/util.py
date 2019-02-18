@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File              : util.py
+# Author            : Swathi S Bhat
+# Date              : 07.12.2018
+# Last Modified Date: 09.12.2018
+# Last Modified By  : Swathi S Bhat
 import random
 import binascii
 
@@ -9,6 +16,14 @@ def convert_to_str(bin_str):
     # TODO: Doesn't work if string has spaces
     return binascii.unhexlify(hex(int(bin_str,2))[2:])
 
+def int_to_bin(n, size):
+    """
+    converts input integer bid to binary with length = bid length
+    """
+    n_bin = bin(n)[2:]
+    if len(n_bin) < size:
+        n_bin = n_bin.zfill(size)
+    return n_bin 
 
 def gcd(a, b):
     while b != 0:

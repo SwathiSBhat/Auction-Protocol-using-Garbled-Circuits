@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+# File              : garbler_test.py
+# Author            : Swathi S Bhat
+# Date              : 07.12.2018
+# Last Modified Date: 13.12.2018
+# Last Modified By  : Swathi S Bhat
+
 from __future__ import print_function
 
 from cryptography.fernet import Fernet
@@ -254,8 +261,6 @@ class Circuit(object):
                 "output_gate_ids": self.output_gate_ids}
         
         for g_id, gate in self.gates.items():
-            # print("-----------------------------")
-            # print("gate id: {} gate type: {}".format(g_id,type(gate)))
             gate_json = {"table": gate.table, "inputs": gate.inputs}
             if type(gate) is OnInputGate:
                 j["on_input_gates"][gate.g_id] = gate_json
@@ -285,15 +290,21 @@ class Circuit(object):
             json.dump(j,f)
         
 
-    def prep_for_json_cut_n_choose(self, filename):
+    def prep_for_json_cut_n_choose(self, filename, IS_NOT_GATE = 0, ip_len = 1):
         
         j = {"num_inputs": self.num_inputs,
+                "IS_NOT_GATE": IS_NOT_GATE,
+                "ip_len": ip_len,
                 "on_input_gates": {},
                 "inter_gates": {},
                 "gates": {},
                 "output_gate_ids": self.output_gate_ids}
         for g_id, gate in self.gates.items():
             gate_json = {"table": gate.table, "inputs": gate.inputs}
+            #if g_id == 0:
+                #print("-----------------------------")
+                #print("gate id: {} gate inputs: {}".format(g_id,gate.inputs))
+                #print("-----------------------------")
             if type(gate) is OnInputGate:
                 j["on_input_gates"][gate.g_id] = gate_json
             elif (type(gate) is InterGate) or (type(gate) is OutputGate and gate.flag == True) :
