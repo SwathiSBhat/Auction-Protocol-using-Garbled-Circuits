@@ -18,6 +18,7 @@ import garbler_test
 import os
 from halo import Halo
 from termcolor import colored 
+import zerorpc
 
 # variables
 MAX_DATA_RECV = 999999

@@ -12,7 +12,9 @@ import json
 import threading
 from util import *
 import random
-import os 
+import os
+from termcolor import colored 
+from halo import Halo 
 
 # variables
 MAX_DATA_RECV = 999999
@@ -119,7 +121,10 @@ if __name__ == "__main__":
             try:
                 vpot_client()
             except ValueError:
-                print("JSON Error")
+                spinner = Halo(text="Keyboard Interrupt. Shutting down", spinner='dots')
+                spinner.start()
+                spinner.fail()
+                # print("JSON Error")
                 os._exit(0)
         except socket.error as e:
             print("An error occurred : ", e)

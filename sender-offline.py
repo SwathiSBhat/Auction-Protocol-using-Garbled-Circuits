@@ -20,13 +20,15 @@ from util import *
 from halo import Halo 
 from termcolor import colored
 import subprocess
+import yappi 
+import sys 
 
 #variables
 MAX_DATA_RECV = 999999
 IS_NOT_GATE = 0
 # no of circuits
 # TODO: Increase n to practical value
-n = 10
+n = 10 
 # global list containing all witness keys and commitments
 # for all N circuits generated
 KEYS = []
@@ -40,12 +42,29 @@ not_tag = []
 pub_key, priv_key = 0, 0
 C = 0
 
+def print_stat(stats, out, limit=None):
+    if stats.empty():
+        return 
+    sizes = [36, 5, 8, 8, 8]
+    columns = dict(zip(range(len(yappi.COLUMNS_FUNCSTATS)), 
+                         zip(yappi.COLUMNS_FUNCSTATS, sizes)))
+    
+    print(yappi.COLUMNS_FUNCSTATS)
+    
+    show_stats = stats
+    if limit:
+        show_stats = stats[:limit]
+    out.write(os.linesep)
+    for stat in show_stats:
+        stat._print(out, columns)
+
+
 def compute():
     
 
     # creation of RSA modulus n by Sender i.e n=p*q
     global pub_key, priv_key , C
-    pub_key,priv_key = GM.GM_keygen(12)
+    pub_key,priv_key = GM.GM_keygen(128)
     N = pub_key[1]
     p,q = priv_key[0],priv_key[1]
        
@@ -135,12 +154,12 @@ def compute():
     with open('json/keys_selected.json','w') as f:
         json.dump(data, f)
     # self.proxy_socket.send(data.encode())
-    print("Sent seleted keys to proxy: ",keys_selected)
-        
+    # print("Sent seleted keys to proxy: ",keys_selected)
+    print(colored("Sent {} keys to proxy for verification: ".format(len(keys_selected)),"yellow"))
+
     with open("test/init.json","w") as f:
         data = {"pub_key":pub_key,"priv_key":priv_key,"CONN_COUNT":CONN_COUNT,"A":A_All,"indices":indices}
         json.dump(data,f)
-
 
 
 class ProxyThread(threading.Thread):
@@ -204,6 +223,10 @@ if __name__ == "__main__":
         CIRCUITS = []
 
         spinner = Halo(text="Generating garbled circuits", spinner='dots', text_color="green")
+        
+        # calculating time for execution
+        # yappi.start()
+
         spinner.start()
         for i in range(0,n):
             mycirc = garbler_test.Circuit(num_inputs, on_input_gates, mid_gates, inter_gates, output_gates)
@@ -213,6 +236,12 @@ if __name__ == "__main__":
         print("\n")
         spinner.succeed('Successfully generated garbled circuits')
         spinner.stop()
+
+        # func_stats = yappi.get_func_stats()
+        # print_stat(func_stats, sys.stdout, limit=10)
+        # func_stats = yappi.get_func_stats().print_all()
+        # yappi.stop()
+        # yappi.clear_stats()
 
         # calling proxy_gen_indices.py to generate indices and inputs
         subprocess.call(['python', "circuit/proxy_gen_indices.py", str(CONN_COUNT), str(n)])

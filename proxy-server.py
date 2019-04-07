@@ -18,6 +18,7 @@ import hashlib
 from util import *
 import evaluator_test
 import yappi
+import sys 
 
 # variables
 BACKLOG = 1000
@@ -46,6 +47,9 @@ def print_stat(stats, out, limit=None):
     sizes = [36, 5, 8, 8, 8]
     columns = dict(zip(range(len(yappi.COLUMNS_FUNCSTATS)),
                        zip(yappi.COLUMNS_FUNCSTATS, sizes)))
+    
+    print(yappi.COLUMNS_FUNCSTATS)
+
     show_stats = stats
     if limit:
         show_stats = stats[:limit]
@@ -246,6 +250,7 @@ class ClientThread(threading.Thread):
                 #     pickle.dump(TAGS,f)
 
                 # yappi.start()
+                
                 output_dict = mycirc.fire(TAGS)
                 print(colored("Output: {}","white").format(output_dict))
                 output_list = []
@@ -265,7 +270,7 @@ class ClientThread(threading.Thread):
                     print('writing {}.{}'.format(OUT_FILE, stat_type))
                     func_stats.save('{}.{}'.format(OUT_FILE, stat_type), type=stat_type)
                 """
-                # print("---------------------")
+                print("---------------------")
                 # print_stat(func_stats, sys.stdout, limit=10)
                 # yappi.stop()
                 # yappi.clear_stats()
